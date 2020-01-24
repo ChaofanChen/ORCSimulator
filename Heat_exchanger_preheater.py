@@ -1,5 +1,6 @@
-from tespy import con, nwk, cmp, hlp, cmp_char
-#from matplotlib import pyplot as plt
+from tespy.connections import connection
+from tespy.networks import network
+from tespy.components import heat_exchanger, source, sink
 import numpy as np
 from tespy.tools import logger
 import logging
@@ -10,25 +11,24 @@ screen_level=logging.WARNING, screen_datefmt = "no_date")
 
 fluids = ['water', 'Isopentane']
 
-nw = nwk.network(fluids=fluids)
+nw = network(fluids=fluids)
 nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
-nw.set_printoptions(print_level='info')
 # components
 # main components
-preheater = cmp.heat_exchanger('preheater')
+preheater = heat_exchanger('preheater')
 # working fluid
-source_wf = cmp.source('working fluid source')
-sink_wf = cmp.sink('working fluid sink')
+source_wf = source('working fluid source')
+sink_wf = sink('working fluid sink')
 #brine
-source_b = cmp.source('brine source')
-sink_b = cmp.sink('brine sink')
+source_b = source('brine source')
+sink_b = sink('brine sink')
 # connections
 # main cycle
 # geo-fluid
-preheater_wf_in = con.connection(source_wf, 'out1', preheater, 'in2', m=243.72)
-preheater_wf_out = con.connection(preheater, 'out2', sink_wf, 'in1')
-brine_in = con.connection(source_b, 'out1', preheater, 'in1')
-brine_out = con.connection(preheater, 'out1', sink_b, 'in1')
+preheater_wf_in = connection(source_wf, 'out1', preheater, 'in2', m=243.72)
+preheater_wf_out = connection(preheater, 'out2', sink_wf, 'in1')
+brine_in = connection(source_b, 'out1', preheater, 'in1')
+brine_out = connection(preheater, 'out1', sink_b, 'in1')
 nw.add_conns(preheater_wf_in, preheater_wf_out, brine_in, brine_out)
 # parametrization of components
 preheater.set_attr(pr1=0.949494949494, pr2=0.955752212)

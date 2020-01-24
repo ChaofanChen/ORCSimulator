@@ -1,5 +1,7 @@
-from tespy import con, nwk, cmp, hlp, cmp_char
-#from matplotlib import pyplot as plt
+from tespy.connections import connection
+from tespy.networks import network
+from tespy.components import evaporator, heat_exchanger, pump, turbine, source, sink, cycle_closer
+from CoolProp.CoolProp import PropsSI
 import numpy as np
 from tespy.tools import logger
 import logging
@@ -9,29 +11,28 @@ screen_level=logging.WARNING, screen_datefmt = "no_date")
 
 fluids = ['water', 'Isopentane']
 
-nw = nwk.network(fluids=fluids)
+nw = network(fluids=fluids)
 nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
-nw.set_printoptions(print_level='info')
 # components
 # main components
-evaporator = cmp.evaporator('evaporator')
+evaporator = evaporator('evaporator')
 # working fluid
-source_wf = cmp.source('working fluid source')
-sink_wf = cmp.sink('working fluid sink')
+source_wf = source('working fluid source')
+sink_wf = sink('working fluid sink')
 #brine
-source_s = cmp.source('steam source')
-source_b = cmp.source('brine source')
-sink_s = cmp.sink('steam sink')
-sink_b = cmp.sink('brine sink')
+source_s = source('steam source')
+source_b = source('brine source')
+sink_s = sink('steam sink')
+sink_b = sink('brine sink')
 # connections
 # main cycle
-evaporator_wf_in = con.connection(source_wf, 'out1', evaporator, 'in3', m=243.72)
-evaporator_wf_out = con.connection(evaporator, 'out3', sink_wf, 'in1')
+evaporator_wf_in = connection(source_wf, 'out1', evaporator, 'in3', m=243.72)
+evaporator_wf_out = connection(evaporator, 'out3', sink_wf, 'in1')
 
-evaporator_steam_in = con.connection(source_s, 'out1', evaporator, 'in1')
-evaporator_sink_s = con.connection(evaporator, 'out1', sink_s, 'in1')
-evaporator_brine_in = con.connection(source_b, 'out1', evaporator, 'in2')
-evaporator_sink_b = con.connection(evaporator, 'out2', sink_b, 'in1')
+evaporator_steam_in = connection(source_s, 'out1', evaporator, 'in1')
+evaporator_sink_s = connection(evaporator, 'out1', sink_s, 'in1')
+evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in2')
+evaporator_sink_b = connection(evaporator, 'out2', sink_b, 'in1')
 nw.add_conns(evaporator_wf_in, evaporator_wf_out, evaporator_steam_in, evaporator_sink_s, evaporator_brine_in, evaporator_sink_b)
 # parametrization of components
 evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
