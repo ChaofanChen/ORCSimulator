@@ -11,17 +11,18 @@ screen_level=logging.WARNING, screen_datefmt = "no_date")
 # input parameters
 fluids = ['water', 'Isopentane', 'Air']
 
-p_after_pump = 11.8
-
-mass_flow_rate_air = 6142
-T_air = -4.7
-p_air = 0.61
-
 mass_flow_rate_brine = 3.4199e2
 T_brine_in = 146.6
 p_brine_in = 9.4
 T_brine_out = 69.1
 
+mass_flow_rate_air = 6142
+T_air = -4.7
+p_air = 0.61
+
+
+# calculation secondary variables
+p_before_turbine = PropsSI('P', 'T', T_brine_in + 273.15 - 26, 'Q', 1, 'Isopentane')/1e5
 # basic network
 nw = network(fluids=fluids)
 nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
@@ -93,8 +94,8 @@ preh.set_attr(pr1=1, pr2=0.955752212)
 evap.set_attr(pr1=1, pr2=1, ttd_l=5)
 
 # parametrization of connections
-turbine_wf_in.set_attr(Td_bp=2.3, h0=500, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
-pump_ihe.set_attr(p=p_after_pump)
+turbine_wf_in.set_attr(Td_bp=2.3, p=p_before_turbine, h0=500, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
+#condenser_pump.set_attr(Td_bp=0)
 
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, m=mass_flow_rate_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
