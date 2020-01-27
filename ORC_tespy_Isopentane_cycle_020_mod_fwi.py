@@ -23,7 +23,6 @@ p_air = 0.61
 
 # calculation secondary variables
 p_before_turbine = PropsSI('P', 'T', T_brine_in + 273.15 - 26, 'Q', 1, 'Isopentane')/1e5
-
 # basic network
 nw = network(fluids=fluids)
 nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
@@ -89,14 +88,13 @@ nw.add_conns(ca_in, ca_out)
 # parametrization of components
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
-condenser.set_attr(pr1=0.8889, pr2=1, subcooling=True)
+condenser.set_attr(pr1=0.8889, pr2=1)
 turbine.set_attr(pr=0.098148148, eta_s=0.85, design=['eta_s', 'pr'])
 preh.set_attr(pr1=1, pr2=0.955752212)
 evap.set_attr(pr1=1, pr2=1, ttd_l=0.1)
 
 # parametrization of connections
-turbine_wf_in.set_attr(Td_bp=2.3, p=p_before_turbine, h0=500, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
-condenser_pump.set_attr(Td_bp=-4.2)
+turbine_wf_in.set_attr(Td_bp=2.0, p=p_before_turbine, h0=500, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
 
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, m=mass_flow_rate_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
