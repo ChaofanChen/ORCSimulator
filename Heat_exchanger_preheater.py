@@ -29,6 +29,7 @@ preheater_wf_in = connection(source_wf, 'out1', preheater, 'in2')
 preheater_wf_out = connection(preheater, 'out2', sink_wf, 'in1')
 brine_in = connection(source_b, 'out1', preheater, 'in1')
 brine_out = connection(preheater, 'out1', sink_b, 'in1')
+
 nw.add_conns(preheater_wf_in, preheater_wf_out)
 nw.add_conns(brine_in, brine_out)
 #nw.add_conns(preheater_wf_in, preheater_wf_out, brine_in, brine_out)

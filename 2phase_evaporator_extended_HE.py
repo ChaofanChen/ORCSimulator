@@ -34,6 +34,7 @@ evaporator_sink_s = connection(evaporator, 'out1', sink_s, 'in1')
 
 evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in2')
 evaporator_sink_b = connection(evaporator, 'out2', sink_b, 'in1')
+
 nw.add_conns(evaporator_wf_in, evaporator_wf_out)
 nw.add_conns(evaporator_steam_in, evaporator_sink_s)
 nw.add_conns(evaporator_brine_in, evaporator_sink_b)
