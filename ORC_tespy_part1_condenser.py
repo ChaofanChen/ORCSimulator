@@ -8,7 +8,7 @@ import logging
 mypath = logger.define_logging(
     log_path=True, log_version=True, timed_rotating={'backupCount': 4},
     screen_level=logging.WARNING, screen_datefmt = "no_date")
-fluids = ['water', 'Isopentane', 'N2', 'Ar', 'O2']
+fluids = ['Isopentane', 'air']
 T_air = -4.7
 p_air = 0.61
 nw = network(fluids=fluids)
@@ -37,9 +37,9 @@ nw.add_conns(ca_in, ca_out)
 condenser.set_attr(pr1=0.8889, pr2=1)
 #condenser.set_attr(Q=-9.365e7)
 # parametrization of connections
-ihe_condenser.set_attr(T=42.4, p=0.9, m=243.72, fluid={'water': 0, 'Isopentane': 1, 'N2': 0, 'Ar': 0, 'O2': 0})
+ihe_condenser.set_attr(T=42.4, p=0.9, m=243.72, fluid={'Isopentane': 1, 'air': 0})
 
-ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'N2': 0.7812, 'Ar': 0.0092, 'O2': 0.2096})
+ca_in.set_attr(T=T_air, p=p_air, fluid={'Isopentane': 0, 'air': 1})
 ca_out.set_attr(T=T_air+15)
 # solving
 mode = 'design'
@@ -47,5 +47,5 @@ file = 'yangyi_condenser'
 # solve the network, print the results to prompt and save
 nw.solve(mode=mode)
 nw.print_results()
-nw.save(file)
+#nw.save(file)
 
