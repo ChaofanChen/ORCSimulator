@@ -39,7 +39,7 @@ nw.add_conns(evaporator_wf_in, evaporator_wf_out)
 nw.add_conns(evaporator_steam_in, evaporator_sink_s)
 nw.add_conns(evaporator_brine_in, evaporator_sink_b)
 # parametrization of components
-evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
+evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1, subcooling='True')
 
 # parametrization of connections
 evaporator_wf_in.set_attr(T=111.6, p=10.8, m=243.72, fluid={'water': 0, 'Isopentane': 1})
