@@ -1,6 +1,6 @@
 from tespy.connections import connection
 from tespy.networks import network
-from tespy.components import evaporator, heat_exchanger, pump, turbine, source, sink, cycle_closer
+from tespy.components import evaporator, heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge
 from CoolProp.CoolProp import PropsSI
 import numpy as np
 from tespy.tools import logger
@@ -16,6 +16,7 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # components
 # main components
 evaporator = evaporator('evaporator')
+pump = pump('condensate pump')
 # working fluid
 source_wf = source('working fluid source')
 sink_wf = sink('working fluid sink')
@@ -30,16 +31,18 @@ evaporator_wf_in = connection(source_wf, 'out1', evaporator, 'in3')
 evaporator_wf_out = connection(evaporator, 'out3', sink_wf, 'in1')
 
 evaporator_steam_in = connection(source_s, 'out1', evaporator, 'in1')
-evaporator_sink_s = connection(evaporator, 'out1', sink_s, 'in1')
+evaporator_pump = connection(evaporator, 'out1', pump, 'in1')
+pump_sink_s = connection(pump, 'out1', sink_s, 'in1')
 
 evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in2')
 evaporator_sink_b = connection(evaporator, 'out2', sink_b, 'in1')
 
 nw.add_conns(evaporator_wf_in, evaporator_wf_out)
-nw.add_conns(evaporator_steam_in, evaporator_sink_s)
+nw.add_conns(evaporator_steam_in, evaporator_pump, pump_sink_s)
 nw.add_conns(evaporator_brine_in, evaporator_sink_b)
 # parametrization of components
 evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
+pump.set_attr(pr=2.4480712, eta_s=0.9)
 
 # parametrization of connections
 evaporator_wf_in.set_attr(T=111.6, p=10.8, m=243.72, fluid={'water': 0, 'Isopentane': 1})
