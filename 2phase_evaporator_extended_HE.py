@@ -18,6 +18,7 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 evaporator = evaporator('evaporator')
 pump = pump('condensate pump')
 merge = merge('geo-fluid merge point')
+preheater = heat_exchanger('preheater')
 # working fluid
 source_wf = source('working fluid source')
 sink_wf = sink('working fluid sink')
@@ -28,7 +29,8 @@ sink_s = sink('steam sink')
 sink_b = sink('brine sink')
 # connections
 # main cycle
-evaporator_wf_in = connection(source_wf, 'out1', evaporator, 'in3')
+preheater_wf_in = connection(source_wf, 'out1', preheater, 'in2')
+preheater_evaporator = connection(preheater, 'out2', evaporator, 'in3')
 evaporator_wf_out = connection(evaporator, 'out3', sink_wf, 'in1')
 
 evaporator_steam_in = connection(source_s, 'out1', evaporator, 'in1')
@@ -38,21 +40,24 @@ pump_sink_s = connection(pump, 'out1', merge, 'in1')
 evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in2')
 evaporator_sink_b = connection(evaporator, 'out2', merge, 'in2')
 
-merge_sink = connection(merge, 'out1', sink_b, 'in1')
+merge_preheater = connection(merge, 'out1', preheater, 'in1')
+preheater_sink = connection(preheater, 'out1', sink_b, 'in1')
 
-nw.add_conns(evaporator_wf_in, evaporator_wf_out)
-nw.add_conns(evaporator_steam_in, evaporator_pump, pump_sink_s, evaporator_brine_in, evaporator_sink_b, merge_sink)
+nw.add_conns(preheater_wf_in, preheater_evaporator, evaporator_wf_out)
+nw.add_conns(evaporator_steam_in, evaporator_pump, pump_sink_s, evaporator_brine_in, evaporator_sink_b, merge_preheater, preheater_sink)
 # parametrization of components
 evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
+preheater.set_attr(pr1=0.949494, pr2=0.955752)
 pump.set_attr(pr=2.4480712, eta_s=0.8)
 
 # parametrization of connections
-evaporator_wf_in.set_attr(T=111.6, p=10.8, fluid={'water': 0, 'Isopentane': 1})
+preheater_wf_in.set_attr(T=39.7, p=11.3, fluid={'water': 0, 'Isopentane': 1})
 
 evaporator_steam_in.set_attr(T=146.6, m=20.4, p=4.34, state='g', fluid={'water': 1, 'Isopentane': 0})
 
 evaporator_brine_in.set_attr(T=146.6, m=190.8, fluid={'water': 1, 'Isopentane': 0})
 evaporator_sink_b.set_attr(T=118.6)
+preheater_sink.set_attr(T=69.1)
 # solving
 mode = 'design'
 file = 'yangyi_evaporator_new'
