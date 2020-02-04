@@ -15,16 +15,16 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # input parameters (the mass flow rate of cooling air should be adjusted
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
-mass_flow_rate_brine = 190.1
-mass_flow_rate_steam = 20.4
+mass_flow_rate_brine = 190.56
+mass_flow_rate_steam = 20.27
 T_brine_in = 146.6
 T_reinjection = 69.1
 # cooling air part
-mass_flow_rate_air = 6142
+mass_flow_rate_air = 6241.5
 T_air = -4.7
 p_air = 0.61
 # calculation secondary variables
-p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-28, 'Q', 1, 'Isopentane')/1e5
+p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isopentane')/1e5
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
 
 # main components
@@ -86,10 +86,11 @@ condenser.set_attr(pr1=0.8889, pr2=1)
 
 # parametrization of connections
 preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
+
 evaporator_steam_in.set_attr(T=T_brine_in, m=mass_flow_rate_steam, p=p_steam_in, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 preheater_sink.set_attr(T=T_reinjection)
-evaporator_sink_b.set_attr(T=T_brine_in-20)
+evaporator_sink_b.set_attr(T=T_brine_in-28)
 
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, m=mass_flow_rate_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
