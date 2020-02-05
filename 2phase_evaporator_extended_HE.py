@@ -1,6 +1,7 @@
 from tespy.connections import connection
 from tespy.networks import network
-from tespy.components import evaporator, heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge, condenser
+from tespy.components import heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge, condenser
+from tespy.components.customs import orc_evaporator
 from CoolProp.CoolProp import PropsSI
 import numpy as np
 from tespy.tools import logger
@@ -28,7 +29,7 @@ p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isopentane
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
 
 # main components
-evaporator = evaporator('evaporator')
+evaporator = orc_evaporator('orc_evaporator')
 pump_c = pump('condensate pump')
 merge = merge('geo-fluid merge point')
 preheater = heat_exchanger('preheater')
