@@ -110,8 +110,14 @@ ca_out.set_attr(T=T_air + 15)
 
 # solving
 mode = 'design'
-file = 'yangyi_evaporator_new'
+save_path = '2phase_eva_extended_yangyi_stable'
 # solve the network, print the results to prompt and save
 nw.solve(mode=mode)
 nw.print_results()
-#nw.save(file)
+nw.save(save_path)
+
+ca_in.set_attr(m=np.nan)
+ihe.set_attr(ttd_u=10)
+
+nw.solve(mode=mode, init_path=save_path)
+nw.print_results()
