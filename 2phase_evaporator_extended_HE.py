@@ -1,4 +1,5 @@
 from tespy.connections import connection
+from tespy.tools import char_line
 from tespy.networks import network
 from tespy.components import heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge, condenser
 from tespy.components.customs import orc_evaporator
@@ -17,17 +18,17 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 190.56
-mass_flow_rate_steam = 20.27
+mass_flow_rate_steam = 20.28
 T_brine_in = 146.6
 T_reinjection = 69.1
 # cooling air part
-mass_flow_rate_air = 6241.5
+mass_flow_rate_air = 6284.6 # 6241.5
 T_air = -4.7
 p_air = 0.61
 # calculation secondary variables
 p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isopentane')/1e5
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
-
+T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
 # main components
 evaporator = orc_evaporator('orc_evaporator')
 pump_c = pump('condensate pump')
@@ -84,6 +85,16 @@ turbine.set_attr(pr=0.098148148, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.8889, pr2=1)
+
+# busses
+# characteristic function for generator efficiency
+# x = np.array([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2])
+# y = np.array([0, 0.88, 0.89, 0.90, 0.91, 0.976, 0.91])
+# gen = char_line(x=x, y=y)
+# motor of pump has a constant efficiency
+# power = bus('total output power')
+# power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
+# nw.add_busses(power)
 
 # parametrization of connections
 preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
