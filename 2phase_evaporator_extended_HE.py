@@ -22,13 +22,13 @@ mass_flow_rate_steam = 20.28
 T_brine_in = 146.6
 T_reinjection = 69.1
 # cooling air part
-mass_flow_rate_air = 6284.6 # 6241.5
+# mass_flow_rate_air = 6284.6 # 6241.5
 T_air = -4.7
 p_air = 0.61
 # calculation secondary variables
 p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isopentane')/1e5
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
-T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
+#T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
 # main components
 evaporator = orc_evaporator('orc_evaporator')
 pump_c = pump('condensate pump')
@@ -105,19 +105,19 @@ preheater_sink.set_attr(T=T_reinjection)
 evaporator_sink_b.set_attr(T=T_brine_in-28)
 
 # air cooling connections
-ca_in.set_attr(T=T_air, p=p_air, m=mass_flow_rate_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
+ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
 ca_out.set_attr(T=T_air + 15)
 
 # solving
 mode = 'design'
 save_path = '2phase_eva_extended_yangyi_stable'
 # solve the network, print the results to prompt and save
-nw.solve(mode=mode)
-nw.print_results()
-nw.save(save_path)
+# nw.solve(mode=mode)
+# nw.print_results()
+# nw.save(save_path)
 
-ca_in.set_attr(m=np.nan)
-ihe.set_attr(ttd_u=10)
+# ca_in.set_attr(m=np.nan)
+ihe.set_attr(ttd_u=26.7)
 
 nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
