@@ -13,27 +13,20 @@ class InputForm(Form):
             u'Type of working fluid', choices = working_fluid_type,
             validators=[validators.InputRequired()])
     Q_w = FloatField(
-        label='Mass flow rate of the hot water (kg/s)', default=30.0,
+        label='Mass flow rate of the hot water (kg/s)', default=190.56,
         validators=[validators.InputRequired()])
     Q_s = FloatField(
-        label='Mass flow rate of the steam (kg/s)', default=1.0,
+        label='Mass flow rate of the steam (kg/s)', default=20.28,
         validators=[validators.InputRequired()])
     T_b_p = FloatField(
-        label='Brine temperature of the product well (K)', default=383.15,
+        label='Brine temperature of the production well (C)', default=146.6,
         validators=[validators.InputRequired()])
     T_b_i = FloatField(
-        label='Brine temperature of the injection well (K)', default=328.15,
-        validators=[validators.InputRequired()])
-    p_b = FloatField(
-        label='Pressure of the brine (Pa)', default=2e5,
-        validators=[validators.InputRequired()])
-    x_c = FloatField(
-        label='Dryness fraction (steam mass fraction)', default=0,
+        label='Brine temperature of the injection well (C)', default=69.1,
         validators=[validators.InputRequired()])
     T_env = FloatField(
-        label='Environment temperature (K)', default=293.15,
+        label='Environment temperature (C)', default=-4.7,
         validators=[validators.InputRequired()])
-    eta = FloatField(
-        label='Heat transfer efficiency between brine and working fluid', default=1,
+    p_env = FloatField(
+        label='Environment pressure (bar)', default=0.61,
         validators=[validators.InputRequired()])
-

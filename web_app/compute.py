@@ -8,45 +8,125 @@ import os, time, glob
 import CoolProp
 from CoolProp.Plots import PropertyPlot
 from CoolProp.CoolProp import PropsSI
+from tespy.connections import connection
+from tespy.tools import char_line
+from tespy.networks import network
+from tespy.components import heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge, condenser
+from tespy.components.customs import orc_evaporator
+from CoolProp.CoolProp import PropsSI
+import numpy as np
+from tespy.tools import logger
+import logging
+mypath = logger.define_logging(
+    log_path=True, log_version=True, timed_rotating={'backupCount': 4},
+    screen_level=logging.WARNING, screen_datefmt = "no_date")
 
-def compute(working_type, Q_w, Q_s, T_b_p, T_b_i, p_b, x_c, T_env, eta):
+def compute(working_type, Q_w, Q_s, T_b_p, T_b_i, T_env, p_env):
     type_wf = working_type
-    T_wf_after_evaporator = T_b_p - 50
-    # working fluid temperature out of the condenser decided by the condenser capcbility
-    T_wf_after_condenser = T_env + 9
-    # energy obtained from brine; '0' means liquid, '1' represents vapor
-    H_b_production = PropsSI('H', 'T', T_b_p, 'Q', 0, 'Water') * Q_w + PropsSI('H', 'T', T_b_p, 'Q', 1, 'Water') * Q_s
-    H_b_injection = (Q_w + Q_s) * PropsSI('H', 'T', T_b_i, 'Q', 0, 'Water')
-    delt_P_b = (H_b_production - H_b_injection) * eta
+    # define basic cycle
+    fluids = ['water', 'Isopentane', 'Air']
+    nw = network(fluids=fluids)
+    nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
+    # input parameters (the mass flow rate of cooling air should be adjusted
+    # based on the temperature of the geo-fluid for stable calculation)
+    # geo-fluid part
+    mass_flow_rate_brine = 190.56
+    mass_flow_rate_steam = 20.28
+    T_brine_in = 146.6
+    T_reinjection = 69.1
+    # cooling air part
+    mass_flow_rate_air = 6284.6 # 6241.5
+    T_air = -4.7
+    p_air = 0.61
+    # calculation secondary variables
+    p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isopentane')/1e5
+    p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
+    # main components
+    evaporator = orc_evaporator('orc_evaporator')
+    pump_c = pump('condensate pump')
+    merge = merge('geo-fluid merge point')
+    preheater = heat_exchanger('preheater')
+    turbine = turbine('turbine')
+    ihe = heat_exchanger('internal heat exchanger')
+    condenser = condenser('condenser')
+    pump = pump('feeding pump')
+    # working fluid
+    source_wf = source('working fluid source')
+    sink_wf = sink('working fluid sink')
+    close_cycle = cycle_closer('cycle closer before preheater')
+    #brine
+    source_s = source('steam source')
+    source_b = source('brine source')
+    sink_s = sink('steam sink')
+    sink_b = sink('brine sink')
+    # cooling air
+    source_ca = source('cooling air source')
+    sink_ca = sink('cooling air sink')
 
-    H_wf_before_preheater = PropsSI('H', 'T', T_wf_after_condenser, 'Q', 0, type_wf)
-    H_wf_after_evaporator = PropsSI('H', 'T', T_wf_after_evaporator, 'Q', 1, type_wf)
-    # mass flow rate of the working fluid
-    Q_wf = delt_P_b / (H_wf_after_evaporator - H_wf_before_preheater)
-    # pressure of the working fluid
-    p_wf_before_pump = PropsSI('P', 'T', T_wf_after_condenser, 'Q', 1, type_wf)
-    p_wf_after_pump = PropsSI('P', 'T', T_wf_after_evaporator, 'Q', 1, type_wf)
+    # connections
+    # main cycle
+    preheater_wf_in = connection(close_cycle, 'out1', preheater, 'in2')
+    preheater_evaporator = connection(preheater, 'out2', evaporator, 'in3')
+    evaporator_turbine = connection(evaporator, 'out3', turbine, 'in1')
+    turbine_ihe = connection(turbine, 'out1', ihe, 'in1')
+    ihe_condenser = connection(ihe, 'out1', condenser, 'in1')
+    condenser_pump = connection(condenser, 'out1', pump, 'in1')
+    pump_ihe = connection(pump, 'out1', ihe, 'in2')
+    ihe_wf_out = connection(ihe, 'out2', close_cycle, 'in1')
+    nw.add_conns(preheater_wf_in, preheater_evaporator, evaporator_turbine, turbine_ihe, ihe_condenser, condenser_pump, pump_ihe, ihe_wf_out)
+    # geo-steam cycle
+    evaporator_steam_in = connection(source_s, 'out1', evaporator, 'in1')
+    evaporator_pump = connection(evaporator, 'out1', pump_c, 'in1')
+    pump_sink_s = connection(pump_c, 'out1', merge, 'in1')
+    # geo-brine cycle
+    evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in2')
+    evaporator_sink_b = connection(evaporator, 'out2', merge, 'in2')
+    merge_preheater = connection(merge, 'out1', preheater, 'in1')
+    preheater_sink = connection(preheater, 'out1', sink_b, 'in1')
+    nw.add_conns(evaporator_steam_in, evaporator_pump, pump_sink_s, evaporator_brine_in, evaporator_sink_b, merge_preheater, preheater_sink)
+    # cooling air cycle
+    ca_in = connection(source_ca, 'out1', condenser, 'in2')
+    ca_out = connection(condenser, 'out2', sink_ca, 'in1')
+    nw.add_conns(ca_in, ca_out)
 
-    # print(p_wf_before_pump, p_wf_after_pump, Q_wf)
-    # isentropic expansion in the turbine, further calculating outlet temperature of the turbine
-    # entropy of inlet working fluid of the turbine
-    S_wf_before_turbine = PropsSI('S', 'H', H_wf_after_evaporator, 'P', p_wf_after_pump, type_wf)
-    # turbine outlet temperature
-    T_wf_after_turbine = PropsSI('T', 'S', S_wf_before_turbine, 'P', p_wf_before_pump, type_wf)
-    # enthalpy of the outlet working fluid from the turbine
-    H_wf_after_turbine = PropsSI('H', 'T', T_wf_after_turbine, 'P', p_wf_before_pump, type_wf)
-    # Considering efficiency of the turbine (80-85%) and generator (95%), the output electricity (kW) can be calculated.
-    P_generator = Q_wf * (H_wf_after_evaporator - H_wf_after_turbine) * 0.80 * 0.95 / 1000
-    # energy from brine
-    P_brine = H_b_production - H_b_injection
-    # efficiency of the geothermal power plant (%)
-    eta_electricity = P_generator * 1000 / P_brine
-    # show key temperatures and efficiency of the eletricity generation
-    # print(T_wf_after_evaporator, T_wf_after_turbine, P_generator, eta_electricity)
+    # parametrization of components
+    evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
+    preheater.set_attr(pr1=0.949494, pr2=0.955752)
+    pump_c.set_attr(pr=2.4480712, eta_s=0.8)
+    turbine.set_attr(pr=0.098148148, eta_s=0.85, design=['eta_s', 'pr'])
+    pump.set_attr(eta_s=0.9)
+    ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
+    condenser.set_attr(pr1=0.8889, pr2=1)
+
+    # parametrization of connections
+    preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
+
+    evaporator_steam_in.set_attr(T=T_brine_in, m=mass_flow_rate_steam, p=p_steam_in, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
+    evaporator_brine_in.set_attr(T=T_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, 'Isopentane': 0, 'Air':0})
+    preheater_sink.set_attr(T=T_reinjection)
+    evaporator_sink_b.set_attr(T=T_brine_in-28)
+
+    # air cooling connections
+    ca_in.set_attr(T=T_air, p=p_air, m=mass_flow_rate_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
+    ca_out.set_attr(T=T_air + 15)
+
+    # solving
+    mode = 'design'
+    save_path = '2phase_eva_extended_yangyi_stable'
+    # solve the network, print the results to prompt and save
+    nw.solve(mode=mode)
+    nw.print_results()
+    nw.save(save_path)
+
+    ca_in.set_attr(m=np.nan)
+    ihe.set_attr(ttd_u=26.7)
+
+    nw.solve(mode=mode, init_path=save_path)
+    nw.print_results()
 
     ts_plot = PropertyPlot(type_wf, 'Ts', tp_limits='ORC')
     ts_plot.calc_isolines(CoolProp.iQ, num=2)
-    ts_plot.calc_isolines(CoolProp.iP, iso_range=[p_wf_before_pump/1000, p_wf_after_pump/1000], num=2, rounding=True)
+    ts_plot.calc_isolines(CoolProp.iP, iso_range=[p_before_turbine/1000, p_wf_after_pump/1000], num=2, rounding=True)
     ts_plot.draw()
     ts_plot.props[CoolProp.iP]['color'] = 'green'
     ts_plot.props[CoolProp.iP]['lw'] = '1'
@@ -65,7 +145,7 @@ def compute(working_type, Q_w, Q_s, T_b_p, T_b_i, p_b, x_c, T_env, eta):
     # a unique filename that the browser has not chached
     plotfile = os.path.join('static', str(time.time()) + '.png')
     ts_plot.savefig(plotfile)
-    return plotfile, P_generator, T_wf_after_evaporator, T_wf_after_turbine, p_wf_before_pump / 100000, p_wf_after_pump / 100000, Q_wf, eta_electricity
+    return plotfile
 
 if __name__ == '__main__':
     compute(1, 0.1, 1, 20)

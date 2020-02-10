@@ -18,8 +18,7 @@ def index():
         working_type = form.fluid_type.data
         result = compute(working_type, form.Q_w.data, form.Q_s.data,
                          form.T_b_p.data, form.T_b_i.data,
-                         form.p_b.data, form.x_c.data,
-                         form.T_env.data, form.eta.data)
+                         form.T_env.data, form.p_env.data)
     else:
         result = None
 
