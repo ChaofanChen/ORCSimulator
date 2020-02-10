@@ -1,0 +1,47 @@
+<form method=post action="">
+<table>
+  {% for field in form %}
+    <tr>
+    <td>{{ field.label }}</td><td>{{ field }}</td>
+    </tr>
+  {% endfor %}
+</table>
+<p><input type=submit value=Compute></form></p>
+
+<p>
+<table>
+<tr>
+<td>
+{% if result != None %}
+<img src="{{ result[0] }}" width="500">
+{% endif %}
+</td>
+</tr>
+
+<tr><td>
+{% if result != None %}
+Electricity output (kW): <br>
+{{ result[1] }} <br>
+<br>
+Working fluid temperature after evaporator (K): <br>
+{{ result[2] }} <br>
+<br>
+Working fluid temperature after turbine (K): <br>
+{{ result[3] }} <br>
+<br>
+Working fluid pressure before feed pump (bar): <br>
+{{ result[4] }} <br>
+<br>
+Working fluid pressure after feed pump (bar): <br>
+{{ result[5] }} <br>
+<br>
+Working fluid mass flow rate (kg/s): <br>
+{{ result[6] }} <br>
+<br>
+Efficiency of the plant: <br>
+{{ result[7] }} <br>
+{% endif %}
+</td></tr>
+</table>
+</p>
+
