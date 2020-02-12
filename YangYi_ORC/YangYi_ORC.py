@@ -83,7 +83,7 @@ ca_out = connection(condenser, 'out2', sink_ca, 'in1')
 nw.add_conns(ca_in, ca_out)
 
 # parametrization of components
-evaporator.set_attr(pr1=0.93181818, pr2=0.970588, pr3=1)
+evaporator.set_attr(pr1=0.81181818, pr2=0.970588, pr3=1)
 preheater.set_attr(pr1=0.949494, pr2=0.955752)
 pump_c.set_attr(pr=2.4480712, eta_s=0.8)
 turbine.set_attr(pr=0.114012184, eta_s=0.85, design=['eta_s', 'pr'])
@@ -107,6 +107,7 @@ preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, 'Isopentane
 evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 preheater_sink.set_attr(T=T_reinjection)
+# evaporator_pump.set_attr(Td_bp=-5)
 evaporator_sink_b.set_attr(T=T_brine_in-22)
 
 # air cooling connections
@@ -127,7 +128,7 @@ save_path = 'yangyi'
 # This value is based on experience from other
 # calculations. It will only influence the heat
 # ejected by the air condenser.
-ihe.set_attr(ttd_u=23.5)
+ihe.set_attr(ttd_u=23.2)
 # Here the hot inlet and cold outlet temperature
 # difference is constrained. The value is based on
 # Yangyi monitoring data.
