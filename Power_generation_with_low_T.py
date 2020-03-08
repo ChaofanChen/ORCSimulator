@@ -17,16 +17,18 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # input parameters (the mass flow rate of cooling air should be adjusted
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
-mass_flow_rate_brine = 200
-T_brine_in = 140
+mass_flow_rate_brine = 55
+T_brine_in = 110
 T_reinjection = 55
 # cooling air part
 # mass_flow_rate_air = 6284.6 # 6241.5
-T_air = 12
+T_air = 18
 p_air = 1
+
+t=10
 # calculation secondary variables
 p_brine_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 0, 'water')/1e5
-p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-26.8, 'Q', 1, 'Isobutane')/1e5
+p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-t, 'Q', 1, 'Isobutane')/1e5
 #T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
 # main components
 evaporator = heat_exchanger('orc_evaporator')
@@ -68,13 +70,13 @@ ca_out = connection(condenser, 'out2', sink_ca, 'in1')
 nw.add_conns(ca_in, ca_out)
 
 # parametrization of components
-evaporator.set_attr(pr1=0.93181818, pr2=0.970588)
-preheater.set_attr(pr1=0.949494, pr2=0.955752)
-turbine.set_attr(pr=0.12, eta_s=0.85, design=['eta_s', 'pr'])
+evaporator.set_attr(pr1=0.9, pr2=0.9)
+preheater.set_attr(pr1=0.9, pr2=0.9)
+turbine.set_attr(pr=0.2, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.95, pr2=1)
-ihe.set_attr(ttd_u=6.7)
+ihe.set_attr(ttd_u=15.7)
 
 # busses
 # characteristic function for generator efficiency
@@ -87,15 +89,15 @@ ihe.set_attr(ttd_u=6.7)
 # nw.add_busses(power)
 
 # parametrization of connections
-evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-20.8, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
+evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
-evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, 'Isobutane': 0, 'Air':0})
-evaporator_preheater.set_attr(T=T_brine_in-8)
+evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
+evaporator_preheater.set_attr(T=T_brine_in-4)
 preheater_sink.set_attr(T=T_reinjection)
 
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isobutane': 0, 'Air': 1})
-ca_out.set_attr(T=T_air + 1)
+ca_out.set_attr(T=T_air + 5)
 
 # solving
 mode = 'design'

@@ -50,10 +50,9 @@ sink_ca = sink('cooling air sink')
 # main cycle
 preheater_wf_in = connection(source_wf, 'out1', preheater, 'in2')
 preheater_evaporator = connection(preheater, 'out2', evaporator, 'in2')
-evaporator_turbine = connection(evaporator, 'out2', turbine, 'in1')
-turbine_wf_out = connection(turbine, 'out1', sink_wf, 'in1')
+evaporator_wf_out = connection(evaporator, 'out2', sink_wf, 'in1')
 
-nw.add_conns(preheater_wf_in, preheater_evaporator, evaporator_turbine, turbine_wf_out)
+nw.add_conns(preheater_wf_in, preheater_evaporator, evaporator_wf_out)
 # geo-brine cycle
 evaporator_brine_in = connection(source_b, 'out1', evaporator, 'in1')
 evaporator_preheater = connection(evaporator, 'out1', preheater, 'in1')
@@ -66,8 +65,7 @@ nw.add_conns(evaporator_brine_in, evaporator_preheater, preheater_sink)
 
 # parametrization of components
 evaporator.set_attr(pr1=0.9, pr2=0.95)
-preheater.set_attr(pr1=0.9, pr2=0.95)
-turbine.set_attr(pr=0.2, eta_s=0.85, design=['eta_s', 'pr'])
+preheater.set_attr(pr1=0.9, pr2=0.9)
 
 # busses
 # characteristic function for generator efficiency
@@ -80,7 +78,7 @@ turbine.set_attr(pr=0.2, eta_s=0.85, design=['eta_s', 'pr'])
 # nw.add_busses(power)
 
 # parametrization of connections
-evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-28, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
+evaporator_wf_out.set_attr(p=p_before_turbine, T = T_brine_in-28, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 preheater_wf_in.set_attr(T=30, state='l')
 
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, state = 'l', fluid={'water': 1, 'Isobutane': 0, 'Air':0})
