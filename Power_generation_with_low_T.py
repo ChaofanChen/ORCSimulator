@@ -18,11 +18,13 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 55
+p_brine_in = 1.434
 T_brine_in = 60
 # T_reinjection = 35
 # cooling air part
 T_air = 6
 p_air = 1
+# amount of electricity generation
 power = -3.50e+05
 
 # temperature difference between brine and saturated gas of the working fluid
@@ -90,10 +92,10 @@ ihe.set_attr(ttd_u=5)
 # nw.add_busses(power)
 
 # parametrization of connections
-evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
+evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in - t + 4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
-evaporator_brine_in.set_attr(T=T_brine_in, p=1.434, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
-evaporator_preheater.set_attr(T=T_brine_in-6)
+evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
+evaporator_preheater.set_attr(T=T_brine_in - 6)
 # preheater_sink.set_attr(T=T_reinjection)
 
 # air cooling connections
