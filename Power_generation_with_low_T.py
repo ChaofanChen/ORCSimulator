@@ -18,14 +18,14 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 55
-T_brine_in = 110
+T_brine_in = 100
 T_reinjection = 55
 # cooling air part
 # mass_flow_rate_air = 6284.6 # 6241.5
 T_air = 18
 p_air = 1
 
-t=10
+t=20
 # calculation secondary variables
 p_brine_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 0, 'water')/1e5
 p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-t, 'Q', 1, 'Isobutane')/1e5
@@ -76,7 +76,7 @@ turbine.set_attr(pr=0.2, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.95, pr2=1)
-ihe.set_attr(ttd_u=13.7)
+ihe.set_attr(ttd_u=11.7)
 
 # busses
 # characteristic function for generator efficiency
@@ -89,9 +89,9 @@ ihe.set_attr(ttd_u=13.7)
 # nw.add_busses(power)
 
 # parametrization of connections
-evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
+evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
-evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
+evaporator_brine_in.set_attr(T=T_brine_in, p=1.434, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
 evaporator_preheater.set_attr(T=T_brine_in-6)
 preheater_sink.set_attr(T=T_reinjection)
 
@@ -103,6 +103,6 @@ ca_out.set_attr(T=T_air + 5)
 mode = 'design'
 save_path = 'power_generation_with_low_T'
 # solve the network, print the results to prompt and save
-nw.solve(mode=mode)
+nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
-# nw.save(save_path)
+nw.save(save_path)

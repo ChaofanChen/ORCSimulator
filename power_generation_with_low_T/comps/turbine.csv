@@ -1,0 +1,2 @@
+label;cp;busses;bus_param;bus_P_ref;bus_char;design;offdesign;design_path;local_design;local_offdesign;P;P_set;P_var;eta_s;eta_s_set;eta_s_var;pr;pr_set;pr_var;eta_s_char;eta_s_char_set;eta_s_char_param;cone;cone_set;Sirr;Sirr_set
+turbine;turbine;[];[];[];[];['eta_s', 'pr'];[];nan;False;False;-1374248.3457439737;False;False;0.8499999999999963;True;False;0.2;True;False;0x7f64a0f6a490;False;m;nan;False;802.9599880197579;False
