@@ -19,9 +19,8 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # geo-fluid part
 mass_flow_rate_brine = 55
 T_brine_in = 60
-T_reinjection = 35
+# T_reinjection = 35
 # cooling air part
-# mass_flow_rate_air = 6284.6 # 6241.5
 T_air = 6
 p_air = 1
 power = -3.50e+05
@@ -90,7 +89,6 @@ ihe.set_attr(ttd_u=5)
 # power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
 # nw.add_busses(power)
 
-
 # parametrization of connections
 evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
@@ -109,3 +107,5 @@ save_path = 'power_generation_with_low_T'
 nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
 nw.save(save_path)
+
+print('Injection_temperature =', preheater_sink.T.val)
