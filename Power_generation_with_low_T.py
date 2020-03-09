@@ -70,13 +70,13 @@ ca_out = connection(condenser, 'out2', sink_ca, 'in1')
 nw.add_conns(ca_in, ca_out)
 
 # parametrization of components
-evaporator.set_attr(pr1=0.9, pr2=0.9)
-preheater.set_attr(pr1=0.9, pr2=0.9)
+evaporator.set_attr(pr1=0.9, pr2=0.93)
+preheater.set_attr(pr1=0.9, pr2=0.95)
 turbine.set_attr(pr=0.2, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.95, pr2=1)
-ihe.set_attr(ttd_u=15.7)
+ihe.set_attr(ttd_u=13.7)
 
 # busses
 # characteristic function for generator efficiency
@@ -92,7 +92,7 @@ ihe.set_attr(ttd_u=15.7)
 evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_brine_in, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
-evaporator_preheater.set_attr(T=T_brine_in-4)
+evaporator_preheater.set_attr(T=T_brine_in-6)
 preheater_sink.set_attr(T=T_reinjection)
 
 # air cooling connections
