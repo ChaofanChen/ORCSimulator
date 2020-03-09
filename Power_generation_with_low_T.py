@@ -19,7 +19,7 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # geo-fluid part
 mass_flow_rate_brine = 55
 p_brine_in = 1.434
-T_brine_in = 60
+T_brine_in = 100
 # T_reinjection = 35
 # cooling air part
 T_air = 6
