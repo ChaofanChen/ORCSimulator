@@ -18,16 +18,16 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 55
-T_brine_in = 90
-T_reinjection = 55
+T_brine_in = 70
+T_reinjection = 45
 # cooling air part
 # mass_flow_rate_air = 6284.6 # 6241.5
-T_air = 20
+T_air = 15
 p_air = 1
 
 t=20
 # calculation secondary variables
-p_brine_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 0, 'water')/1e5
+# p_brine_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 0, 'water')/1e5
 p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-t, 'Q', 1, 'Isobutane')/1e5
 #T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
 # main components
@@ -72,11 +72,11 @@ nw.add_conns(ca_in, ca_out)
 # parametrization of components
 evaporator.set_attr(pr1=0.9, pr2=0.93)
 preheater.set_attr(pr1=0.9, pr2=0.95)
-turbine.set_attr(pr=0.4, eta_s=0.85, design=['eta_s', 'pr'])
+turbine.set_attr(pr=0.55, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.95, pr2=1)
-ihe.set_attr(ttd_u=7)
+ihe.set_attr(ttd_u=5)
 
 # busses
 # characteristic function for generator efficiency

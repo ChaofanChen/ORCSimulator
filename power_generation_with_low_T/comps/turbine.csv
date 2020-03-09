@@ -1,2 +1,2 @@
 label;cp;busses;bus_param;bus_P_ref;bus_char;design;offdesign;design_path;local_design;local_offdesign;P;P_set;P_var;eta_s;eta_s_set;eta_s_var;pr;pr_set;pr_var;eta_s_char;eta_s_char_set;eta_s_char_param;cone;cone_set;Sirr;Sirr_set
-turbine;turbine;['total output power'];['P'];[-703546.5065862021];['0x7fc133b5fc50'];['eta_s', 'pr'];[];nan;False;False;-703546.5065862021;False;False;0.8500000000000041;True;False;0.4;True;False;0x7fc133b10690;False;m;nan;False;390.6784726525917;False
+turbine;turbine;['total output power'];['P'];[-331296.9106702619];['0x7ff389aaccd0'];['eta_s', 'pr'];[];nan;False;False;-331296.9106702619;False;False;0.8500000000000046;True;False;0.55;True;False;0x7ff389a5d610;False;m;nan;False;189.09991064468812;False
