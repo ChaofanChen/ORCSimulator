@@ -18,13 +18,15 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 55
-T_brine_in = 70
-T_reinjection = 45
+T_brine_in = 60
+T_reinjection = 35
 # cooling air part
 # mass_flow_rate_air = 6284.6 # 6241.5
-T_air = 15
+T_air = 6
 p_air = 1
+power = -3.50e+05
 
+# temperature difference between brine and saturated gas of the working fluid
 t=20
 # calculation secondary variables
 # p_brine_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 0, 'water')/1e5
@@ -72,7 +74,7 @@ nw.add_conns(ca_in, ca_out)
 # parametrization of components
 evaporator.set_attr(pr1=0.9, pr2=0.93)
 preheater.set_attr(pr1=0.9, pr2=0.95)
-turbine.set_attr(pr=0.55, eta_s=0.85, design=['eta_s', 'pr'])
+turbine.set_attr(pr=0.55, eta_s=0.85, design=['eta_s', 'pr'], P=power)
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.95, pr2=1)
@@ -80,20 +82,21 @@ ihe.set_attr(ttd_u=5)
 
 # busses
 # characteristic function for generator efficiency
-x = np.array([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2])
-y = np.array([0, 0.88, 0.89, 0.90, 0.91, 0.976, 0.91])
-gen = char_line(x=x, y=y)
-# motor of pump has a constant efficiency
-power = bus('total output power')
-power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
-nw.add_busses(power)
+# x = np.array([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2])
+# y = np.array([0, 0.88, 0.89, 0.90, 0.91, 0.976, 0.91])
+# gen = char_line(x=x, y=y)
+# # motor of pump has a constant efficiency
+# power = bus('total output power')
+# power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
+# nw.add_busses(power)
+
 
 # parametrization of connections
 evaporator_turbine.set_attr(p=p_before_turbine, T = T_brine_in-t+4, state='g', fluid={'water': 0, 'Isobutane': 1, 'Air': 0})
 
 evaporator_brine_in.set_attr(T=T_brine_in, p=1.434, m=mass_flow_rate_brine, state='l',fluid={'water': 1, 'Isobutane': 0, 'Air':0})
 evaporator_preheater.set_attr(T=T_brine_in-6)
-preheater_sink.set_attr(T=T_reinjection)
+# preheater_sink.set_attr(T=T_reinjection)
 
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isobutane': 0, 'Air': 1})
