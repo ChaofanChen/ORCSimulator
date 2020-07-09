@@ -1,0 +1,3 @@
+label;cp;busses;bus_param;bus_P_ref;bus_char;bus_base;design;offdesign;design_path;local_design;local_offdesign
+brine source;source;[];[];[];[];[];[];[];nan;False;False
+cooling air source;source;[];[];[];[];[];[];[];nan;False;False
