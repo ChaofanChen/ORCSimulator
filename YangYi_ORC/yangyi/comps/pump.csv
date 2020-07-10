@@ -1,3 +1,0 @@
-label;cp;busses;bus_param;bus_P_ref;bus_char;design;offdesign;design_path;local_design;local_offdesign;P;P_set;P_var;eta_s;eta_s_set;eta_s_var;pr;pr_set;pr_var;eta_s_char;eta_s_char_set;eta_s_char_param;flow_char;flow_char_set;flow_char_param;Sirr;Sirr_set
-feeding pump;pump;[];[];[];[];[];[];nan;False;False;481905.8556393247;False;False;0.9000000000000001;True;False;14.749818950665025;False;False;0x7f7883d4ed50;False;nan;0x7f7883d4ef10;False;nan;163.47302299617246;False
-condensate pump;pump;[];[];[];[];[];[];nan;False;False;16102.03074509712;False;False;0.8000000000000294;True;False;2.4480712;True;False;0x7f7883d4e490;False;nan;0x7f7883d4e8d0;False;nan;7.717972754355851;False
