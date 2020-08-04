@@ -170,7 +170,7 @@ print('Power_output (MW):', turbine.P.val / 1e6)
 
 state = CP.AbstractState('HEOS', 'Isopentane')
 T_crit = state.trivial_keyed_output(CP.iT_critical)
-df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1'])
+df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
 P0 = condenser_pump.p.val * 100000
 P1 = p_before_turbine * 100000
 T_range = np.geomspace(273.15, T_crit, 1000)
@@ -179,6 +179,13 @@ for T in T_range:
     df.loc[T, 's_g'] = PropsSI('S', 'T', T, 'Q', 1, 'Isopentane')
     df.loc[T, 's_iso_P0'] = PropsSI('S', 'T', T, 'P', P0, 'Isopentane')
     df.loc[T, 's_iso_P1'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
+
+T_range_evaporator = np.geomspace(preheater_evaporator.T.val + 273.15, evaporator_turbine.T.val + 273.15+0.1, 100)
+for T in T_range_evaporator:
+    df.loc[T, 's_iso_P_top'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
+T_range_condenser = np.geomspace(ihe_condenser.T.val + 273.15, condenser_pump.T.val + 273.15-0.1, 100)
+for T in T_range_condenser:
+    df.loc[T, 's_iso_P_bottom'] = PropsSI('S', 'T', T, 'P', P0, 'Isopentane')
 # print(df)
 
 fig, ax = plt.subplots()
@@ -186,15 +193,21 @@ ax.plot(df['s_g'], df.index - 273.15, color='black')
 ax.plot(df['s_l'], df.index - 273.15, color='black')
 ax.plot(df['s_iso_P0'], df.index - 273.15, color='green')
 ax.plot(df['s_iso_P1'], df.index - 273.15, color='green')
+ax.plot(df['s_iso_P_top'], df.index - 273.15, color='red')
+ax.plot(df['s_iso_P_bottom'], df.index - 273.15, color='red')
 
-Temp = [T_before_turbine, T_after_turbine, T_before_condenser, T_after_condenser, T_after_ihe, T_after_preheater, T_after_pump]
-entropy = [s_before_turbine, s_after_turbine, s_before_condenser, s_after_condenser, s_after_ihe, s_after_preheater, s_after_pump]
-n = ['before_turbine', 'after_turbine', 'before_condenser', 'after_condenser', 'after_ihe', 'after_preheater', 'after_pump']
+Temp = [T_before_turbine, T_after_turbine, T_before_condenser, T_after_condenser, T_after_pump, T_after_ihe, T_after_preheater]
+entropy = [s_before_turbine, s_after_turbine, s_before_condenser, s_after_pump, s_after_condenser, s_after_ihe, s_after_preheater]
+n = ['before_turbine', 'after_turbine', 'before_condenser', 'after_condenser', 'after_feeding_pump', 'after_ihe', 'after_preheater']
 
 ax.scatter(entropy, Temp, color='red')
 for i, txt in enumerate(n):
-    ax.annotate(txt, (entropy[i], Temp[i]))
-    plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-')
+    ax.annotate(txt, (entropy[i], Temp[i])) #, ha='center'
+for i in range (0, 2, 1):
+    plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-', lw=2)
+for i in range (3, 6, 1):
+    plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-', lw=2)
+
 
 ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [K]',
        title='T,s Graph for working fluid')
