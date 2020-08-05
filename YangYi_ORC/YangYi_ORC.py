@@ -201,7 +201,7 @@ ax.plot(df['s_iso_P_bottom'], df.index - 273.15, color='red')
 
 Temp = [T_before_turbine, T_after_turbine, T_before_condenser, T_steam_wf_low_P-273.15, T_after_condenser, T_after_ihe, T_after_preheater]
 entropy = [s_before_turbine, s_after_turbine, s_before_condenser, s_steam_wf_low_P, s_after_condenser, s_after_ihe, s_after_preheater]
-n = ['before_turbine', 'after_turbine', 'before_condenser', 'o', 'after_condenser', 'after_ihe', 'after_preheater']
+n = ['before turbine', 'after turbine', 'before condenser', ' ', 'after condenser', 'after ihe', 'after preheater']
 
 ax.scatter(entropy, Temp, color='red')
 for i, txt in enumerate(n):
@@ -211,8 +211,7 @@ for i in range (0, 3, 1):
 for i in range (4, 6, 1):
     plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-', lw=2)
 
-
-ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [K]',
+ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [dC]',
        title='T,s Graph for working fluid')
 ax.grid()
 plt.savefig('ts_plot_with_ORC_cycle.png')
