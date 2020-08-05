@@ -14,8 +14,9 @@ import logging
 mypath = logger.define_logging(
 log_path=True, log_version=True, timed_rotating={'backupCount': 4},
 screen_level=logging.WARNING, screen_datefmt = "no_date")
-import CoolProp
+import CoolProp, tespy
 print('CoolProp ver:%s'%(CoolProp.__version__))
+print('TESPy ver:%s'%(tespy.__version__))
 # define basic cycle
 fluids = ['water', 'Isopentane', 'Air']
 nw = network(fluids=fluids)
