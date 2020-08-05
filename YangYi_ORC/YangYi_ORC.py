@@ -121,14 +121,7 @@ preheater_sink.set_attr(T=T_reinjection)
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
 # ca_out.set_attr(T=T_air + 15)
 
-# solving
-mode = 'design'
-save_path = 'yangyi'
-# solve the network, print the results to prompt and save
-# nw.solve(mode=mode)
-# nw.print_results()
-# nw.save(save_path)
-
+# parametrization of components
 # The parameter "ttd_u" will
 # constrain the temperature difference between
 # the hot inlet and the cold outlet.
@@ -141,7 +134,9 @@ ihe.set_attr(ttd_u=23.2)
 # Yangyi monitoring data.
 preheater.set_attr(ttd_u=5.1)
 condenser.set_attr(ttd_u=6.98)
-
+# solving
+mode = 'design'
+save_path = 'yangyi'
 nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
 ##%-----------------------------------------------------------------------------------------------------------
