@@ -142,7 +142,7 @@ nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
 
 thermal_efficiency = -turbine.P.val/1000/(evaporator_steam_in.h.val*mass_flow_rate_steam+evaporator_brine_in.h.val*mass_flow_rate_brine-preheater_sink.h.val*(mass_flow_rate_steam+mass_flow_rate_brine))
-print('Power_output (MW):', turbine.P.val / 1e6)
+print('Power_output (MW):', -turbine.P.val / 1e6)
 print('Thermal_efficiency (%):', thermal_efficiency*100)
 ##%-----------------------------------------------------------------------------------------------------------
 s_before_turbine = PropsSI('S', 'T', evaporator_turbine.T.val + 273.15, 'Q', 1, 'Isopentane')
