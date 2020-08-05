@@ -139,6 +139,10 @@ mode = 'design'
 save_path = 'yangyi'
 nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
+
+thermal_efficiency = -turbine.P.val/1000/(evaporator_steam_in.h.val*mass_flow_rate_steam+evaporator_brine_in.h.val*mass_flow_rate_brine-preheater_sink.h.val*(mass_flow_rate_steam+mass_flow_rate_brine))
+print('Power_output (MW):', turbine.P.val / 1e6)
+print('Thermal_efficiency (%):', thermal_efficiency*100)
 ##%-----------------------------------------------------------------------------------------------------------
 s_before_turbine = PropsSI('S', 'T', evaporator_turbine.T.val + 273.15, 'Q', 1, 'Isopentane')
 T_before_turbine = evaporator_turbine.T.val
@@ -160,8 +164,6 @@ T_after_ihe = ihe_wf_out.T.val
 
 s_after_preheater = PropsSI('S', 'T', preheater_evaporator.T.val + 273.15, 'P', preheater_evaporator.p.val * 100000, 'Isopentane')
 T_after_preheater = preheater_evaporator.T.val
-
-print('Power_output (MW):', turbine.P.val / 1e6)
 
 state = CP.AbstractState('HEOS', 'Isopentane')
 T_crit = state.trivial_keyed_output(CP.iT_critical)
