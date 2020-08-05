@@ -4,7 +4,6 @@ from tespy.networks import network
 from tespy.components import heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter, merge, condenser
 from tespy.components.customs import orc_evaporator
 from CoolProp.CoolProp import PropsSI
-from CoolProp.Plots import SimpleCompressionCycle
 import matplotlib.pyplot as plt
 from CoolProp.Plots import PropertyPlot
 import CoolProp
@@ -16,7 +15,9 @@ import logging
 mypath = logger.define_logging(
 log_path=True, log_version=True, timed_rotating={'backupCount': 4},
 screen_level=logging.WARNING, screen_datefmt = "no_date")
+import CoolProp, tespy
 print('CoolProp ver:%s'%(CoolProp.__version__))
+print('TESPy ver:%s'%(tespy.__version__))
 # define basic cycle
 fluids = ['water', 'Isopentane', 'Air']
 nw = network(fluids=fluids)
