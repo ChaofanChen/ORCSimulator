@@ -18,7 +18,8 @@ import CoolProp, tespy
 print('CoolProp ver:%s'%(CoolProp.__version__))
 print('TESPy ver:%s'%(tespy.__version__))
 # define basic cycle
-fluids = ['water', 'Isopentane', 'Air']
+working_fluid = 'Isopentane'
+fluids = ['water', working_fluid, 'Air']
 nw = network(fluids=fluids)
 nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # input parameters (the mass flow rate of cooling air should be adjusted
@@ -34,13 +35,13 @@ T_reinjection = 70.8
 T_air = 0.5
 p_air = 0.61
 # calculation secondary variables
-p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-22.6, 'Q', 1, 'Isopentane')/1e5
+p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-22.6, 'Q', 1, working_fluid)/1e5
 rho_brine_in=PropsSI('D', 'T', T_brine_in+273.15, 'Q', 0, 'water')
 mass_flow_rate_brine = volume_flow_rate_brine*rho_brine_in /3600
 
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
 
-#T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
+#T=PropsSI('T', 'P', 0.8e5, 'Q', 0, working_fluid)-273.15
 # main components
 evaporator = orc_evaporator('orc_evaporator')
 pump_c = pump('condensate pump')
@@ -109,16 +110,16 @@ condenser.set_attr(pr1=0.8889, pr2=1)
 # nw.add_busses(power)
 
 # parametrization of connections
-preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, 'Isopentane': 1, 'Air': 0})
+preheater_evaporator.set_attr(p=p_before_turbine, fluid={'water': 0, working_fluid: 1, 'Air': 0})
 
-evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
-evaporator_brine_in.set_attr(T=T_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, 'Isopentane': 0, 'Air':0})
+evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, working_fluid: 0, 'Air':0})
+evaporator_brine_in.set_attr(T=T_brine_in, m=mass_flow_rate_brine, fluid={'water': 1, working_fluid: 0, 'Air':0})
 preheater_sink.set_attr(T=T_reinjection)
 # evaporator_pump.set_attr(Td_bp=-5)
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
 
 # air cooling connections
-ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
+ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, working_fluid: 0, 'Air': 1})
 # ca_out.set_attr(T=T_air + 15)
 
 # parametrization of components
@@ -141,51 +142,51 @@ nw.solve(mode=mode, init_path=save_path)
 nw.print_results()
 
 thermal_efficiency = -turbine.P.val/1000/(evaporator_steam_in.h.val*mass_flow_rate_steam+evaporator_brine_in.h.val*mass_flow_rate_brine-preheater_sink.h.val*(mass_flow_rate_steam+mass_flow_rate_brine))
-print('Power_output (MW):', turbine.P.val / 1e6)
+print('Power_output (MW):', -turbine.P.val / 1e6)
 print('Thermal_efficiency (%):', thermal_efficiency*100)
 ##%-----------------------------------------------------------------------------------------------------------
-s_before_turbine = PropsSI('S', 'T', evaporator_turbine.T.val + 273.15, 'Q', 1, 'Isopentane')
+s_before_turbine = PropsSI('S', 'T', evaporator_turbine.T.val + 273.15, 'Q', 1, working_fluid)
 T_before_turbine = evaporator_turbine.T.val
 
-s_after_turbine = PropsSI('S', 'T', turbine_ihe.T.val + 273.15, 'P', turbine_ihe.p.val * 100000, 'Isopentane')
+s_after_turbine = PropsSI('S', 'T', turbine_ihe.T.val + 273.15, 'P', turbine_ihe.p.val * 100000, working_fluid)
 T_after_turbine = turbine_ihe.T.val
 
-s_before_condenser = PropsSI('S', 'T', ihe_condenser.T.val + 273.15, 'P', ihe_condenser.p.val * 100000, 'Isopentane')
+s_before_condenser = PropsSI('S', 'T', ihe_condenser.T.val + 273.15, 'P', ihe_condenser.p.val * 100000, working_fluid)
 T_before_condenser = ihe_condenser.T.val
 
-s_after_condenser = PropsSI('S', 'T', condenser_pump.T.val + 273.15, 'Q', 0, 'Isopentane')
+s_after_condenser = PropsSI('S', 'T', condenser_pump.T.val + 273.15, 'Q', 0, working_fluid)
 T_after_condenser = condenser_pump.T.val
 
-s_after_pump = PropsSI('S', 'T', pump_ihe.T.val + 273.15, 'P', pump_ihe.p.val * 100000, 'Isopentane')
+s_after_pump = PropsSI('S', 'T', pump_ihe.T.val + 273.15, 'P', pump_ihe.p.val * 100000, working_fluid)
 T_after_pump = pump_ihe.T.val
 
-s_after_ihe = PropsSI('S', 'T', ihe_wf_out.T.val + 273.15, 'P', ihe_wf_out.p.val * 100000, 'Isopentane')
+s_after_ihe = PropsSI('S', 'T', ihe_wf_out.T.val + 273.15, 'P', ihe_wf_out.p.val * 100000, working_fluid)
 T_after_ihe = ihe_wf_out.T.val
 
-s_after_preheater = PropsSI('S', 'T', preheater_evaporator.T.val + 273.15, 'P', preheater_evaporator.p.val * 100000, 'Isopentane')
+s_after_preheater = PropsSI('S', 'T', preheater_evaporator.T.val + 273.15, 'P', preheater_evaporator.p.val * 100000, working_fluid)
 T_after_preheater = preheater_evaporator.T.val
 
-state = CP.AbstractState('HEOS', 'Isopentane')
+state = CP.AbstractState('HEOS', working_fluid)
 T_crit = state.trivial_keyed_output(CP.iT_critical)
 df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
 P0 = condenser_pump.p.val * 100000
 P1 = p_before_turbine * 100000
 T_range = np.geomspace(273.15, T_crit, 1000)
 for T in T_range:
-    df.loc[T, 's_l'] = PropsSI('S', 'T', T, 'Q', 0, 'Isopentane')
-    df.loc[T, 's_g'] = PropsSI('S', 'T', T, 'Q', 1, 'Isopentane')
-    df.loc[T, 's_iso_P0'] = PropsSI('S', 'T', T, 'P', P0, 'Isopentane')
-    df.loc[T, 's_iso_P1'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
+    df.loc[T, 's_l'] = PropsSI('S', 'T', T, 'Q', 0, working_fluid)
+    df.loc[T, 's_g'] = PropsSI('S', 'T', T, 'Q', 1, working_fluid)
+    df.loc[T, 's_iso_P0'] = PropsSI('S', 'T', T, 'P', P0, working_fluid)
+    df.loc[T, 's_iso_P1'] = PropsSI('S', 'T', T, 'P', P1, working_fluid)
 
 T_range_evaporator = np.geomspace(preheater_evaporator.T.val + 273.15, evaporator_turbine.T.val + 273.15+0.1, 100)
 for T in T_range_evaporator:
-    df.loc[T, 's_iso_P_top'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
+    df.loc[T, 's_iso_P_top'] = PropsSI('S', 'T', T, 'P', P1, working_fluid)
 
-T_steam_wf_low_P = PropsSI('T', 'P', P0, 'Q', 1, 'Isopentane')
-s_steam_wf_low_P = PropsSI('S', 'P', P0, 'Q', 1, 'Isopentane')
+T_steam_wf_low_P = PropsSI('T', 'P', P0, 'Q', 1, working_fluid)
+s_steam_wf_low_P = PropsSI('S', 'P', P0, 'Q', 1, working_fluid)
 T_range_condenser = np.geomspace(T_steam_wf_low_P + 0.1, condenser_pump.T.val + 273.15-0.1, 100)
 for T in T_range_condenser:
-    df.loc[T, 's_iso_P_bottom'] = PropsSI('S', 'T', T, 'P', P0, 'Isopentane')
+    df.loc[T, 's_iso_P_bottom'] = PropsSI('S', 'T', T, 'P', P0, working_fluid)
 # print(df)
 
 fig, ax = plt.subplots()
