@@ -28,7 +28,6 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 mass_flow_rate_brine = 180 # kg/s
 mass_flow_rate_steam = 20
 T_brine_in = 140
-T_reinjection = 70
 # cooling air part
 T_air = 0.5
 p_air = 0.61
@@ -101,7 +100,7 @@ condenser.set_attr(pr1=0.8889, pr2=1)
 preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=550, m0=250)
 evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine, state='l', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
-preheater_sink.set_attr(T=T_reinjection)
+# preheater_sink.set_attr(T=T_reinjection)
 # evaporator_pump.set_attr(Td_bp=-5)
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
 # air cooling connections
@@ -121,6 +120,7 @@ ihe.set_attr(ttd_u=20)
 # Yangyi monitoring data.
 condenser.set_attr(ttd_u=10)
 preheater.set_attr(ttd_u=5.5)
+preheater.set_attr(ttd_l=25)
 evaporator.set_attr(ttd_u=25)
 # solving
 mode = 'design'
