@@ -107,7 +107,7 @@ evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine,
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
-# ca_out.set_attr(T=T_air + 10.34)
+ca_out.set_attr(T=T_air + 10.34)
 
 # parametrization of components
 # The parameter "ttd_u" will
@@ -122,7 +122,7 @@ ihe.set_attr(ttd_u=20)
 preheater.set_attr(ttd_u=6)
 preheater.set_attr(ttd_l=25)
 evaporator.set_attr(ttd_u=temperature_diff_brine_evaporating_wf)
-condenser.set_attr(ttd_u=10) # The upper terminal temperature difference ttd_u refers to boiling temperature at hot side inlet.
+# condenser.set_attr(ttd_u=10) # The upper terminal temperature difference ttd_u refers to boiling temperature at hot side inlet.
 condenser.set_attr(ttd_l=temperature_diff_condensing_wf_air)
 # solving
 mode = 'design'
