@@ -34,14 +34,14 @@ nw.add_conns(preheater_wf_in, preheater_wf_out)
 nw.add_conns(brine_in, brine_out)
 #nw.add_conns(preheater_wf_in, preheater_wf_out, brine_in, brine_out)
 # parametrization of components
-preheater.set_attr(pr1=0.949494949494, pr2=0.955752212)
+preheater.set_attr(pr1=0.949494949494, pr2=0.955752212, ttd_l=29.4)
 #p_and_e.set_attr(Q=-9.365e7)
 # parametrization of connections
 preheater_wf_in.set_attr(T=39.7, p=11.3, m=243.72, fluid={'water': 0, 'Isopentane': 1})
 preheater_wf_out.set_attr(T=111.6)
 
 brine_in.set_attr(T=119.9, p=9.9, fluid={'water': 1, 'Isopentane': 0})
-brine_out.set_attr(T=69.1)
+# brine_out.set_attr(T=69.1)
 # solving
 mode = 'design'
 file = 'yangyi_preheater'
