@@ -31,6 +31,8 @@ T_brine_in = 140
 # cooling air part
 T_air = 8
 p_air = 0.61
+temperature_diff_condensing_wf_air = 17
+temperature_diff_brine_evaporating_wf = 25
 # calculation secondary variables
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
 # main components
@@ -80,13 +82,13 @@ ca_in = connection(source_ca, 'out1', condenser, 'in2')
 ca_out = connection(condenser, 'out2', sink_ca, 'in1')
 nw.add_conns(ca_in, ca_out)
 # parametrization of components
-evaporator.set_attr(pr1=0.81181818, pr2=0.970588, pr3=1)
-preheater.set_attr(pr1=0.949494, pr2=0.955752)
+evaporator.set_attr(pr1=0.81, pr2=0.97, pr3=1)
+preheater.set_attr(pr1=0.95, pr2=0.95)
 pump_c.set_attr(eta_s=0.8)
-turbine.set_attr(pr=0.114012184, eta_s=0.85, design=['eta_s', 'pr'])
-pump.set_attr(eta_s=0.9)
-ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
-condenser.set_attr(pr1=0.8889, pr2=1)
+turbine.set_attr(eta_s=0.85, design=['eta_s'])
+pump.set_attr(eta_s=0.8)
+ihe.set_attr(pr1=0.85, pr2=0.96)
+condenser.set_attr(pr1=0.89, pr2=1)
 # busses
 # characteristic function for generator efficiency
 # x = np.array([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2])
@@ -97,7 +99,7 @@ condenser.set_attr(pr1=0.8889, pr2=1)
 # power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
 # nw.add_busses(power)
 # parametrization of connections
-preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=550, m0=240)
+preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=550, m0=250)
 evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine, state='l', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 # preheater_sink.set_attr(T=T_reinjection)
@@ -105,7 +107,7 @@ evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine,
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
-# ca_out.set_attr(T=T_air + 15)
+# ca_out.set_attr(T=T_air + 10.34)
 
 # parametrization of components
 # The parameter "ttd_u" will
@@ -119,9 +121,9 @@ ihe.set_attr(ttd_u=20)
 # difference is constrained.
 preheater.set_attr(ttd_u=6)
 preheater.set_attr(ttd_l=25)
-evaporator.set_attr(ttd_u=25)
-
-condenser.set_attr(ttd_u=8)
+evaporator.set_attr(ttd_u=temperature_diff_brine_evaporating_wf)
+condenser.set_attr(ttd_u=10) # The upper terminal temperature difference ttd_u refers to boiling temperature at hot side inlet.
+condenser.set_attr(ttd_l=temperature_diff_condensing_wf_air)
 # solving
 mode = 'design'
 save_path = 'ORC_for_2_phase_geo_sources'
@@ -196,6 +198,11 @@ for i in range (0, 3, 1):
     plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-', lw=2)
 for i in range (4, 6, 1):
     plt.plot(entropy[i:i+2], Temp[i:i+2], 'ro-', lw=2)
+
+# s_brine_in = PropsSI('S', 'T', T_brine_in + 273.15, 'P', p_steam_in, 'water')
+# s_brine_out = PropsSI('S', 'T', preheater_sink.T.val + 273.15, 'P', preheater_sink.p.val * 100000, 'water')
+# ax.scatter(s_brine_in, T_brine_in)
+# ax.scatter(s_brine_out, preheater_sink.T.val)
 
 ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [dC]',
        title='T,s Graph for working fluid')
