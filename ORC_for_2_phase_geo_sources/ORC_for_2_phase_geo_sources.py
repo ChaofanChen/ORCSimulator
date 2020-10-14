@@ -26,22 +26,14 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 # based on the temperature of the geo-fluid for stable calculation)
 # geo-fluid part
 mass_flow_rate_brine = 180 # kg/s
-# volume_flow_rate_brine = 700 # m3/h
 mass_flow_rate_steam = 20
 T_brine_in = 140
 T_reinjection = 70
 # cooling air part
-# mass_flow_rate_air = 6284.6 # 6241.5
 T_air = 0.5
 p_air = 0.61
 # calculation secondary variables
-p_before_turbine = PropsSI('P', 'T', T_brine_in+273.15-22.6, 'Q', 1, 'Isopentane')/1e5
-# rho_brine_in=PropsSI('D', 'T', T_brine_in+273.15, 'Q', 0, 'water')
-# mass_flow_rate_brine = volume_flow_rate_brine*rho_brine_in /3600
-
 p_steam_in = PropsSI('P', 'T', T_brine_in+273.15, 'Q', 1, 'water')/1e5
-
-#T=PropsSI('T', 'P', 0.8e5, 'Q', 0, 'Isopentane')-273.15
 # main components
 evaporator = orc_evaporator('orc_evaporator')
 pump_c = pump('condensate pump')
@@ -63,7 +55,6 @@ sink_b = sink('brine sink')
 # cooling air
 source_ca = source('cooling air source')
 sink_ca = sink('cooling air sink')
-
 # connections
 # main cycle
 preheater_wf_in = connection(close_cycle, 'out1', preheater, 'in2')
@@ -89,7 +80,6 @@ nw.add_conns(evaporator_steam_in, evaporator_pump, pump_sink_s, evaporator_brine
 ca_in = connection(source_ca, 'out1', condenser, 'in2')
 ca_out = connection(condenser, 'out2', sink_ca, 'in1')
 nw.add_conns(ca_in, ca_out)
-
 # parametrization of components
 evaporator.set_attr(pr1=0.81181818, pr2=0.970588, pr3=1)
 preheater.set_attr(pr1=0.949494, pr2=0.955752)
@@ -98,7 +88,6 @@ turbine.set_attr(pr=0.114012184, eta_s=0.85, design=['eta_s', 'pr'])
 pump.set_attr(eta_s=0.9)
 ihe.set_attr(pr1=0.849056603, pr2=0.957627118)
 condenser.set_attr(pr1=0.8889, pr2=1)
-
 # busses
 # characteristic function for generator efficiency
 # x = np.array([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2])
@@ -108,16 +97,13 @@ condenser.set_attr(pr1=0.8889, pr2=1)
 # power = bus('total output power')
 # power.add_comps({'c': turbine, 'p': 'P', 'char': gen})
 # nw.add_busses(power)
-
 # parametrization of connections
-preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=540, m0=230)
-
+preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=550, m0=250)
 evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine, state='l', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 preheater_sink.set_attr(T=T_reinjection)
 # evaporator_pump.set_attr(Td_bp=-5)
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
-
 # air cooling connections
 ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
 # ca_out.set_attr(T=T_air + 15)
@@ -129,21 +115,21 @@ ca_in.set_attr(T=T_air, p=p_air, fluid={'water': 0, 'Isopentane': 0, 'Air': 1})
 # This value is based on experience from other
 # calculations. It will only influence the heat
 # ejected by the air condenser.
-ihe.set_attr(ttd_u=23.2)
+ihe.set_attr(ttd_u=20)
 # Here the hot inlet and cold outlet temperature
 # difference is constrained. The value is based on
 # Yangyi monitoring data.
-preheater.set_attr(ttd_u=5.1)
-condenser.set_attr(ttd_u=6.98)
-evaporator.set_attr(ttd_u=22.6)
+condenser.set_attr(ttd_u=10)
+preheater.set_attr(ttd_u=5.5)
+evaporator.set_attr(ttd_u=25)
 # solving
 mode = 'design'
 save_path = 'ORC_for_2_phase_geo_sources'
-nw.solve(mode=mode)
+nw.solve(mode=mode) # , init_path=save_path
 nw.print_results()
 
 thermal_efficiency = -turbine.P.val/1000/(evaporator_steam_in.h.val*mass_flow_rate_steam+evaporator_brine_in.h.val*mass_flow_rate_brine-preheater_sink.h.val*(mass_flow_rate_steam+mass_flow_rate_brine))
-print('Power_output (MW):', -turbine.P.val / 1e6)
+print('Power_output (MW):', -turbine.P.val * 0.96 / 1e6)
 print('Thermal_efficiency (%):', thermal_efficiency*100)
 ##%-----------------------------------------------------------------------------------------------------------
 s_before_turbine = PropsSI('S', 'T', evaporator_turbine.T.val + 273.15, 'Q', 1, 'Isopentane')
@@ -171,7 +157,7 @@ state = CP.AbstractState('HEOS', 'Isopentane')
 T_crit = state.trivial_keyed_output(CP.iT_critical)
 df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
 P0 = condenser_pump.p.val * 100000
-P1 = p_before_turbine * 100000
+P1 = evaporator_turbine.p.val * 100000
 T_range = np.geomspace(273.15, T_crit, 1000)
 for T in T_range:
     df.loc[T, 's_l'] = PropsSI('S', 'T', T, 'Q', 0, 'Isopentane')
@@ -179,11 +165,12 @@ for T in T_range:
     df.loc[T, 's_iso_P0'] = PropsSI('S', 'T', T, 'P', P0, 'Isopentane')
     df.loc[T, 's_iso_P1'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
 
-T_range_evaporator = np.geomspace(preheater_evaporator.T.val + 273.15, evaporator_turbine.T.val + 273.15+0.1, 100)
+T_range_evaporator = np.geomspace(preheater_evaporator.T.val + 273.15, evaporator_turbine.T.val + 273.15 + 0.05, 100)
 for T in T_range_evaporator:
     df.loc[T, 's_iso_P_top'] = PropsSI('S', 'T', T, 'P', P1, 'Isopentane')
 
 T_steam_wf_low_P = PropsSI('T', 'P', P0, 'Q', 1, 'Isopentane')
+T_liquid_wf_low_P = PropsSI('T', 'P', P0, 'Q', 0, 'Isopentane')
 s_steam_wf_low_P = PropsSI('S', 'P', P0, 'Q', 1, 'Isopentane')
 T_range_condenser = np.geomspace(T_steam_wf_low_P + 0.1, condenser_pump.T.val + 273.15-0.1, 100)
 for T in T_range_condenser:
