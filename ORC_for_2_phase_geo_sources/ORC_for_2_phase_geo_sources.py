@@ -28,6 +28,7 @@ nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 mass_flow_rate_brine = 180 # kg/s
 mass_flow_rate_steam = 20
 T_brine_in = 140
+T_reinjection = 70
 # cooling air part
 T_air = 8
 p_air = 0.61
@@ -102,7 +103,7 @@ condenser.set_attr(pr1=0.89, pr2=1)
 preheater_evaporator.set_attr(fluid={'water': 0, 'Isopentane': 1, 'Air': 0}, h0=550, m0=250)
 evaporator_steam_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_steam, state='g', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
 evaporator_brine_in.set_attr(T=T_brine_in, p=p_steam_in, m=mass_flow_rate_brine, state='l', fluid={'water': 1, 'Isopentane': 0, 'Air':0})
-# preheater_sink.set_attr(T=T_reinjection)
+preheater_sink.set_attr(T=T_reinjection)
 # evaporator_pump.set_attr(Td_bp=-5)
 # evaporator_sink_b.set_attr(T=T_brine_in-22)
 # air cooling connections
@@ -119,15 +120,17 @@ ca_out.set_attr(T=T_air + 10.34)
 ihe.set_attr(ttd_u=20)
 # Here the hot inlet and cold outlet temperature
 # difference is constrained.
-preheater.set_attr(ttd_u=6)
-preheater.set_attr(ttd_l=25)
+# preheater.set_attr(ttd_u=6)
+# preheater.set_attr(ttd_l=25)
+preheater_evaporator.set_attr(Td_bp=-2)
+
 evaporator.set_attr(ttd_u=temperature_diff_brine_evaporating_wf)
 # condenser.set_attr(ttd_u=10) # The upper terminal temperature difference ttd_u refers to boiling temperature at hot side inlet.
 condenser.set_attr(ttd_l=temperature_diff_condensing_wf_air)
 # solving
 mode = 'design'
 save_path = 'ORC_for_2_phase_geo_sources'
-nw.solve(mode=mode) # , init_path=save_path
+nw.solve(mode=mode, min_iter=20, init_path=save_path) # , init_path=save_path
 nw.print_results()
 
 thermal_efficiency = -turbine.P.val/1000/(evaporator_steam_in.h.val*mass_flow_rate_steam+evaporator_brine_in.h.val*mass_flow_rate_brine-preheater_sink.h.val*(mass_flow_rate_steam+mass_flow_rate_brine))
