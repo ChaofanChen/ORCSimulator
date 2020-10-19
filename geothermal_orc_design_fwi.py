@@ -7,6 +7,7 @@ from tespy.components import (
 )
 
 from fluprodia import FluidPropertyDiagram
+from CoolProp.CoolProp import PropsSI
 
 import pandas as pd
 import numpy as np
@@ -27,6 +28,7 @@ class PowerPlant():
         geo_steam_share = 0.1
         T_brine_in = 144.8
         T_reinjection = 70.8
+        p_brine_in = PropsSI('P', 'T', T_brine_in + 273.15, 'Q', 1, 'water') / 1e5
 
         # ambient parameters
 
@@ -130,7 +132,7 @@ class PowerPlant():
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
-        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), p=10, T=T_brine_in)
+        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), p=p_brine_in, T=T_brine_in, state='l')
 
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
@@ -160,6 +162,7 @@ class PowerPlant():
 
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
+        self.nw.print_results()
         eb_gm.set_attr(T=None)
 
     def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
@@ -168,6 +171,7 @@ class PowerPlant():
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.solve('design')
+
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
@@ -178,7 +182,7 @@ class PowerPlant():
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
         power = self.nw.busses['power output'].P.val
         print('Power output: {} W'.format(round(power, 0)))
-        print('Thermal efficiency: {} %'.format(round(eta_th, 4)))
+        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
 
     def plot_process(self, fn='somename'):
         result_dict = {
