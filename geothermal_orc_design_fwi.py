@@ -24,10 +24,10 @@ class PowerPlant():
 
         # geo parameters
 
-        geo_mass_flow = 210
+        geo_mass_flow = 200
         geo_steam_share = 0.1
-        T_brine_in = 144.8
-        T_reinjection = 70.8
+        T_brine_in = 140
+        T_reinjection = 70
         p_brine_in = PropsSI('P', 'T', T_brine_in + 273.15, 'Q', 1, 'water') / 1e5
 
         # ambient parameters
