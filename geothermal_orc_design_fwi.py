@@ -137,7 +137,8 @@ class PowerPlant():
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
         es_em.set_attr(x=0.5, design=['x'])
-        eb_gm.set_attr(T=120)
+        eco_gr.set_attr(T=T_reinjection)
+        # eb_gm.set_attr(T=120)
 
         eco_dr.set_attr(Td_bp=-2)
 
@@ -162,7 +163,7 @@ class PowerPlant():
 
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
-        self.nw.print_results()
+        # self.nw.print_results()
         eb_gm.set_attr(T=None)
 
     def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
@@ -171,6 +172,7 @@ class PowerPlant():
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.solve('design')
+        # self.nw.print_results()
 
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
@@ -213,9 +215,9 @@ class PowerPlant():
 # for some testing
 sometest = PowerPlant(working_fluid='Isopentane')
 sometest.generate_diagram()
-sometest.calculate_efficiency(200, 0.1, 75)
+sometest.calculate_efficiency(200, 0.15, 70)
 sometest.print_result()
-sometest.calculate_efficiency(200, 0.05, 75)
+sometest.calculate_efficiency(200, 0, 75)
 sometest.print_result()
 sometest.calculate_efficiency(200, 0.15, 75)
 sometest.print_result()
