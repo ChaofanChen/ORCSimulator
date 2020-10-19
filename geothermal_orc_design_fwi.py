@@ -32,7 +32,7 @@ class PowerPlant():
 
         # ambient parameters
 
-        T_amb = 0
+        T_amb = 5
         p_amb = 1
 
         # main components
@@ -181,7 +181,7 @@ class PowerPlant():
     def print_result(self):
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
         power = self.nw.busses['power output'].P.val
-        print('Power output: {} W'.format(round(power, 0)))
+        print('Power output: {} MW'.format(round(power / 1e6, 4)))
         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
 
     def plot_process(self, fn='somename'):
@@ -213,17 +213,17 @@ class PowerPlant():
 # for some testing
 sometest = PowerPlant(working_fluid='Isopentane')
 sometest.generate_diagram()
-sometest.calculate_efficiency(210, 0.1, 75)
+sometest.calculate_efficiency(200, 0.1, 75)
 sometest.print_result()
-sometest.calculate_efficiency(210, 0.05, 75)
+sometest.calculate_efficiency(200, 0.05, 75)
 sometest.print_result()
-sometest.calculate_efficiency(210, 0.15, 75)
+sometest.calculate_efficiency(200, 0.15, 75)
 sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 80)
+sometest.calculate_efficiency(200, 0.1, 80)
 sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 70)
+sometest.calculate_efficiency(200, 0.1, 70)
 sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 65)
+sometest.calculate_efficiency(200, 0.1, 65)
 sometest.print_result()
 
 sometest.plot_process(fn='Isopentane_65')
