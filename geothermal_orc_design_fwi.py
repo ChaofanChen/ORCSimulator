@@ -5,11 +5,17 @@ from tespy.components import (
     heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter,
     merge, condenser, drum, valve, heat_exchanger_simple
 )
+from tespy.tools import logger
 
 from fluprodia import FluidPropertyDiagram
+from CoolProp.CoolProp import PropsSI as PSI
 
 import pandas as pd
 import numpy as np
+import logging
+
+
+logger.define_logging(screen_level=logging.ERROR)
 
 
 class PowerPlant():
@@ -126,7 +132,17 @@ class PowerPlant():
         gb_eb.set_attr(fluid={self.working_fluid: 0, 'air': 0, 'water': 1})
 
         # connection parameters
-        ihe_cond.set_attr(Td_bp=2, p0=1, design=['Td_bp'])
+        ls_stable_p0 = PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) / 1e5
+        lsv_tur.set_attr(p0=ls_stable_p0)
+        ws_stable_h0 = (
+            PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) + 0.5 * (
+                PSI('H', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) -
+                PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid)
+            )
+        ) / 1e3
+        tur_ihe.set_attr(h=ws_stable_h0)
+        ihe_cond.set_attr(Td_bp=2, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
+        fwp_ihe.set_attr(h=ref(cond_fwp, 1, 1e3))
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
@@ -135,7 +151,7 @@ class PowerPlant():
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
         es_em.set_attr(x=0.5, design=['x'])
-        eb_gm.set_attr(T=120)
+        eb_gm.set_attr(T=T_brine_in - 20)
 
         eco_dr.set_attr(Td_bp=-2)
 
@@ -145,12 +161,12 @@ class PowerPlant():
 
         # component parameters
         # turbines
-        tur.set_attr(eta_s=0.9, design=['eta_s'], offdesign=['cone', 'eta_s_char'])
+        tur.set_attr(design=['eta_s'], offdesign=['cone', 'eta_s_char'])
         ls_valve.set_attr(pr=1, design=['pr'])
         # condensing
         ihe.set_attr(pr1=1, pr2=1, offdesign=['kA_char'])
         air_cond.set_attr(pr1=1, pr2=1, ttd_u=10, design=['ttd_u'], offdesign=['kA_char'])
-        feed_water_pump.set_attr(eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char'])
+        feed_water_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
 
         # steam generator
         evap_steam.set_attr(pr1=0.99, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
@@ -160,6 +176,10 @@ class PowerPlant():
 
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
+        tur.set_attr(eta_s=0.9)
+        feed_water_pump.set_attr(eta_s=0.75)
+        tur_ihe.set_attr(h=None)
+        fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
 
     def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
@@ -178,9 +198,10 @@ class PowerPlant():
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
         power = self.nw.busses['power output'].P.val
         print('Power output: {} W'.format(round(power, 0)))
-        print('Thermal efficiency: {} %'.format(round(eta_th, 4)))
+        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 2)))
 
     def plot_process(self, fn='somename'):
+
         result_dict = {
             prop: [
                 conn.get_attr(prop).val for conn in self.nw.conns.index
@@ -188,15 +209,25 @@ class PowerPlant():
             ] for prop in ['p', 'h', 's', 'T']
         }
 
-        self.diagram.set_limits(x_min=-100, x_max=700, y_min=1e-1, y_max=1e2)
+        self.diagram.set_limits(
+            x_min=min(result_dict['h']) - 50,
+            x_max=max(result_dict['h']) + 50,
+            y_min=min(result_dict['p']) / 2,
+            y_max=max(result_dict['p']) * 10
+        )
         self.diagram.draw_isolines('logph')
-        self.diagram.ax.scatter(result_dict['h'], result_dict['p'])
-        self.diagram.save(fn + 'logph.pdf')
+        self.diagram.ax.scatter(result_dict['h'], result_dict['p'], zorder=100)
+        self.diagram.save(fn + '_logph.pdf')
 
-        self.diagram.set_limits(x_min=-100, x_max=1600, y_min=-50, y_max=200)
+        self.diagram.set_limits(
+            x_min=min(result_dict['s']) - 50,
+            x_max=max(result_dict['s']) + 50,
+            y_min=min(result_dict['T']) - 25,
+            y_max=PSI('T_critical', self.working_fluid) + 25 - 273.15
+        )
         self.diagram.draw_isolines('Ts')
-        self.diagram.ax.scatter(result_dict['s'], result_dict['T'])
-        self.diagram.save(fn + 'Ts.pdf')
+        self.diagram.ax.scatter(result_dict['s'], result_dict['T'], zorder=100)
+        self.diagram.save(fn + '_Ts.pdf')
 
     def generate_diagram(self):
 
@@ -206,20 +237,23 @@ class PowerPlant():
         self.diagram.set_isolines(T=iso_T)
         self.diagram.calc_isolines()
 
-# for some testing
-sometest = PowerPlant(working_fluid='Isopentane')
-sometest.generate_diagram()
-sometest.calculate_efficiency(210, 0.1, 75)
-sometest.print_result()
-sometest.calculate_efficiency(210, 0.05, 75)
-sometest.print_result()
-sometest.calculate_efficiency(210, 0.15, 75)
-sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 80)
-sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 70)
-sometest.print_result()
-sometest.calculate_efficiency(210, 0.1, 65)
-sometest.print_result()
 
-sometest.plot_process(fn='Isopentane_65')
+fluids = ['R600', 'R245fa', 'R245CA', 'Toluene', 'Isopentane', 'n-Pentane', 'R123']
+for fluid in fluids:
+    try:
+        # for some testing
+        sometest = PowerPlant(working_fluid=fluid)
+        eff = sometest.calculate_efficiency(210, 0.1, 65)
+        if not np.isnan(eff):
+            sometest.generate_diagram()
+            sometest.plot_process(fn=fluid)
+            sometest.print_result()
+        else:
+            print('+' * 75)
+            print(fluid)
+            print('+' * 75)
+    except:
+        print('+' * 75)
+        print(fluid)
+        print('+' * 75)
+        pass
