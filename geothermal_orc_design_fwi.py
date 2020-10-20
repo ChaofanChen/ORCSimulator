@@ -137,8 +137,8 @@ class PowerPlant():
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
         es_em.set_attr(x=0.5, design=['x'])
-        eco_gr.set_attr(T=T_reinjection)
-        # eb_gm.set_attr(T=120)
+        # eco_gr.set_attr(T=T_reinjection)
+        eb_gm.set_attr(T=120)
 
         eco_dr.set_attr(Td_bp=-2)
 
@@ -172,7 +172,7 @@ class PowerPlant():
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.solve('design')
-        # self.nw.print_results()
+        self.nw.print_results()
 
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
@@ -213,19 +213,32 @@ class PowerPlant():
         self.diagram.calc_isolines()
 
 # for some testing
-sometest = PowerPlant(working_fluid='Isopentane')
-sometest.generate_diagram()
-sometest.calculate_efficiency(200, 0.15, 70)
-sometest.print_result()
-sometest.calculate_efficiency(200, 0, 75)
-sometest.print_result()
-sometest.calculate_efficiency(200, 0.15, 75)
-sometest.print_result()
-sometest.calculate_efficiency(200, 0.1, 80)
-sometest.print_result()
-sometest.calculate_efficiency(200, 0.1, 70)
-sometest.print_result()
-sometest.calculate_efficiency(200, 0.1, 65)
-sometest.print_result()
+# Isopentane = PowerPlant(working_fluid='Isopentane')
+# Isopentane.generate_diagram()
+# Isopentane.calculate_efficiency(200, 0.1, 70)
+# Isopentane.print_result()
+# Isopentane.plot_process(fn='Isopentane_65')
+#
+# R600 = PowerPlant(working_fluid='R600')
+# R600.calculate_efficiency(200, 0.1, 70)
+# R600.print_result()
 
-sometest.plot_process(fn='Isopentane_65')
+# Isobutane = PowerPlant(working_fluid='Isobutane')
+# Isobutane.calculate_efficiency(200, 0.06, 70)
+# Isobutane.print_result()
+
+R245fa = PowerPlant(working_fluid='R245fa')
+R245fa.calculate_efficiency(200, 0.1, 70)
+R245fa.print_result()
+
+# R245CA = PowerPlant(working_fluid='R245CA')
+# R245CA.calculate_efficiency(200, 0.1, 70)
+# R245CA.print_result()
+
+# Pentane = PowerPlant(working_fluid='n-Pentane')
+# Pentane.calculate_efficiency(200, 0.1, 70)
+# Pentane.print_result()
+
+# R123 = PowerPlant(working_fluid='R123')
+# R123.calculate_efficiency(200, 0.1, 70)
+# R123.print_result()
