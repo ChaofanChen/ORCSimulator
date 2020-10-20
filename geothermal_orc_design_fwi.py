@@ -146,7 +146,7 @@ class PowerPlant():
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
-        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), p=10, T=T_brine_in)
+        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), T=T_brine_in, x=0)
 
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
@@ -176,6 +176,7 @@ class PowerPlant():
 
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
+        self.nw.print_results()
         tur.set_attr(eta_s=0.9)
         feed_water_pump.set_attr(eta_s=0.75)
         tur_ihe.set_attr(h=None)
