@@ -62,7 +62,7 @@ class PowerPlant():
         dr = drum('drum')
 
         eco = heat_exchanger('economiser')
-        feed_water_pump = pump('feed water pump')
+        feed_working_fluid_pump = pump('feed working fluid pump')
         geo_merge = merge('brine merge')
 
         tur = turbine('turbine')
@@ -75,7 +75,7 @@ class PowerPlant():
         power_bus = bus('power output')
         power_bus.add_comps(
             {'c': tur, 'char': -1},
-            {'c': feed_water_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
+            {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
         )
 
         geothermal_bus = bus('thermal input')
@@ -94,8 +94,8 @@ class PowerPlant():
         self.nw.add_conns(ls_in, lsv_tur, tur_ihe, ihe_cond)
 
         # condenser to steam generator
-        cond_fwp = connection(air_cond, 'out1', feed_water_pump, 'in1')
-        fwp_ihe = connection(feed_water_pump, 'out1', ihe, 'in2')
+        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1')
+        fwp_ihe = connection(feed_working_fluid_pump, 'out1', ihe, 'in2')
         self.nw.add_conns(cond_fwp, fwp_ihe)
 
         # steam generator
@@ -169,7 +169,7 @@ class PowerPlant():
         # condensing
         ihe.set_attr(pr1=1, pr2=1, offdesign=['kA_char'])
         air_cond.set_attr(pr1=1, pr2=1, ttd_u=10, design=['ttd_u'], offdesign=['kA_char'])
-        feed_water_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
+        feed_working_fluid_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
 
         # steam generator
         evap_steam.set_attr(pr1=0.99, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
@@ -179,9 +179,9 @@ class PowerPlant():
 
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
-        # self.nw.print_results()
+        self.nw.print_results()
         tur.set_attr(eta_s=0.9)
-        feed_water_pump.set_attr(eta_s=0.75)
+        feed_working_fluid_pump.set_attr(eta_s=0.75)
         tur_ihe.set_attr(h=None)
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
