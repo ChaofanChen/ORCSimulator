@@ -8,6 +8,7 @@ from tespy.components import (
 from tespy.tools import logger
 
 from fluprodia import FluidPropertyDiagram
+import CoolProp as CP
 from CoolProp.CoolProp import PropsSI as PSI
 
 
@@ -191,7 +192,7 @@ class PowerPlant():
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.solve('design')
-        self.nw.print_results()
+        # self.nw.print_results()
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
@@ -241,12 +242,17 @@ class PowerPlant():
         self.diagram.set_isolines(T=iso_T)
         self.diagram.calc_isolines()
 
-fluids = ['R600', 'R245fa', 'R245CA', 'Toluene', 'Isopentane', 'n-Pentane', 'R123']
+fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
 for fluid in fluids:
     try:
         # for some testing
+        print('+' * 75)
         sometest = PowerPlant(working_fluid=fluid)
-        eff = sometest.calculate_efficiency(210, 0.1, 65)
+        print('Working fluid:', fluid)
+        state = CP.AbstractState('HEOS', fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
+        eff = sometest.calculate_efficiency(200, 0.1, 70)
         if not np.isnan(eff):
             sometest.generate_diagram()
             sometest.plot_process(fn=fluid)
