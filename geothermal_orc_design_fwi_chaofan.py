@@ -334,7 +334,7 @@ class PowerPlant():
         # plt.show()
 
 fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] # Isobutane
-Td_bp_conds = np.geomspace(2, 30, 14)
+Td_bp_conds = np.linspace(2, 30, 14)
 for fluid in fluids:
     try:
         # for some testing
@@ -347,7 +347,7 @@ for fluid in fluids:
         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
         for Td_bp_cond in Td_bp_conds:
             eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2, 10, 10)
-            PowerPlantWithIHE.plot_Ts(fn=fluid)
+            # PowerPlantWithIHE.plot_Ts(fn=fluid)
             sensitivity_analysis.loc[Td_bp_cond, 'power_output']=PowerPlantWithIHE.print_result()[0]
             sensitivity_analysis.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()[1]
         fig, ax = plt.subplots()
@@ -357,8 +357,15 @@ for fluid in fluids:
         ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="o")
         ax2.set(ylabel='Thermal efficiency [%]')
         plt.ylim(13.5, 18)
+        ax.yaxis.label.set_color('blue')
+        ax.yaxis.label.set_size(12)
+        ax.xaxis.label.set_size(12)
+        ax.tick_params(axis='y', colors='blue')
+        ax2.yaxis.label.set_color('red')
+        ax2.yaxis.label.set_size(12)
+        ax2.tick_params(axis='y', colors='red')
         ax.grid()
-        # plt.show()
+        plt.show()
         plt.savefig('diff_Td_bp_cond_plot_' + fluid + '.png')
     except:
         print('+' * 75)
