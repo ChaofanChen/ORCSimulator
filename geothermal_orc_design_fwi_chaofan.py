@@ -207,6 +207,24 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
+    def calculate_efficiency_opt(self, x):
+
+        self.nw.connections['geosteam'].set_attr(m=20)
+        self.nw.connections['geobrine'].set_attr(m=180)
+        self.nw.connections['reinjection'].set_attr(T=70)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=x[0])
+        self.nw.connections['eco_dr'].set_attr(Td_bp=x[1])
+        self.nw.components['main condenser'].set_attr(ttd_u=10)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
+
+        self.nw.solve('design')
+        # self.nw.print_results()
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
     def print_result(self):
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
         power = self.nw.busses['power output'].P.val
@@ -280,20 +298,20 @@ class PowerPlant():
 
         P0 = self.nw.connections['cond_fwp'].p.val * 100000
         P1 = self.nw.connections['lsv_tur'].p.val * 100000
-        T_range = np.geomspace(273.15, T_crit, 1000)
+        T_range = np.linspace(273.15, T_crit, 1000)
         for T in T_range:
             df.loc[T, 's_l'] = PSI('S', 'T', T, 'Q', 0, self.working_fluid)
             df.loc[T, 's_g'] = PSI('S', 'T', T, 'Q', 1, self.working_fluid)
             df.loc[T, 's_iso_P0'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
             df.loc[T, 's_iso_P1'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
 
-        T_range_evaporator = np.geomspace(self.nw.connections['eco_dr'].T.val + 273.15, self.nw.connections['lsv_tur'].T.val + 273.15 + 0.1, 100)
+        T_range_evaporator = np.linspace(self.nw.connections['eco_dr'].T.val + 273.15, self.nw.connections['lsv_tur'].T.val + 273.15 + 0.1, 100)
         for T in T_range_evaporator:
             df.loc[T, 's_iso_P_top'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
 
         T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
         s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
-        T_range_condenser = np.geomspace(T_steam_wf_low_P + 10, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 100)
+        T_range_condenser = np.linspace(T_steam_wf_low_P + 10, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 200)
         for T in T_range_condenser:
             df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
         # print(df)
@@ -354,7 +372,7 @@ for fluid in fluids:
         ax.plot(sensitivity_analysis.index, sensitivity_analysis['power_output'], color='blue', marker="o")
         ax.set(xlabel='Td_bp of condenser [°C]', ylabel='Power output [MW]')
         ax2=ax.twinx()
-        ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="o")
+        ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="*")
         ax2.set(ylabel='Thermal efficiency [%]')
         plt.ylim(13.5, 18)
         ax.yaxis.label.set_color('blue')
@@ -365,7 +383,7 @@ for fluid in fluids:
         ax2.yaxis.label.set_size(12)
         ax2.tick_params(axis='y', colors='red')
         ax.grid()
-        plt.show()
+        # plt.show()
         plt.savefig('diff_Td_bp_cond_plot_' + fluid + '.png')
     except:
         print('+' * 75)
@@ -378,7 +396,7 @@ for fluid in fluids:
 # class optimization_problem():
 #
 #     def fitness(self, x):
-#         f1 = 1 / self.model.calculate_efficiency(x)
+#         f1 = 1 / self.model.calculate_efficiency_opt(x)
 #         ci1 = -x[0] + x[1]
 #         print(x)
 #         return [f1, ci1]
