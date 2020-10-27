@@ -143,14 +143,12 @@ class PowerPlant():
             )
         ) / 1e3
         tur_ihe.set_attr(h=ws_stable_h0)
-        ihe_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5
-                          , label='IHEToCond')
+        ihe_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
         fwp_ihe.set_attr(h=ref(cond_fwp, 1, 1e3))
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
-        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share),
-                       p=PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, 'water') / 1e5, T=T_brine_in, state='l')
+        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), T=T_brine_in, x=0)
 
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
@@ -193,7 +191,7 @@ class PowerPlant():
         self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
-        self.nw.connections['IHEToCond'].set_attr(Td_bp = Td_bp_cond)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp = Td_bp_cond)
         self.nw.solve('design')
         # self.nw.print_results()
 
@@ -308,7 +306,7 @@ class PowerPlant():
 
         ax.scatter(entropy, Temp, color='red', s=0.5)
         for i, txt in enumerate(n):
-            ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12)  # , ha='center'
+            ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
         for i in range(0, 2, 1):
             plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
         for i in range(4, 6, 1):
@@ -327,7 +325,7 @@ class PowerPlant():
         plt.savefig(fn + '_ORC_Ts_plot.png')
         # plt.show()
 
-fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
+fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] # Isobutane
 Td_bp_conds = [2, 4, 6, 8, 10]
 for fluid in fluids:
     try:
@@ -354,6 +352,51 @@ for fluid in fluids:
         print(fluid)
         print('+' * 75)
         pass
+
+# import pygmo as pg
+#
+# class optimization_problem():
+#
+#     def fitness(self, x):
+#         f1 = 1 / self.model.calculate_efficiency(x)
+#         ci1 = -x[0] + x[1]
+#         print(x)
+#         return [f1, ci1]
+#
+#     def get_nobj(self):
+#         """Return number of objectives."""
+#         return 1
+#
+#     # equality constraints
+#     def get_nec(self):
+#         return 0
+#
+#     # inequality constraints
+#     def get_nic(self):
+#         return 1
+#
+#     def get_bounds(self):
+#         """Return bounds of decision variables."""
+#         return ([1, 1], [40, 40])
+#
+# optimize = optimization_problem()
+# optimize.model = PowerPlant(working_fluid='Isopentane')
+# prob = pg.problem(optimize)
+# num_gen = 15
+#
+# pop = pg.population(prob, size=10)
+# algo = pg.algorithm(pg.ihs(gen=num_gen))
+#
+# for gen in range(num_gen):
+#     print('Evolution: {}'.format(gen))
+#     print('Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+#     pop = algo.evolve(pop)
+#
+# print()
+# print('Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+# print('Extraction 1: {} bar'.format(round(pop.champion_x[0], 4)))
+# print('Extraction 2: {} bar'.format(round(pop.champion_x[1], 4)))
+
 
 # class PowerPlantWithoutIHE():
 #
