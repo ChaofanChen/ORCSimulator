@@ -185,13 +185,20 @@ class PowerPlant():
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
         ihe_cond.set_attr(Td_bp=None)
+        eco_dr.set_attr(Td_bp=None)
+        air_cond.set_attr(ttd_u=None)
+        evap_brine.set_attr(ttd_l=None)
 
-    def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond):
+    def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Td_bp_eco, ttd_u_cond, ttd_l_evap):
 
         self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
-        self.nw.connections['ihe_cond'].set_attr(Td_bp = Td_bp_cond)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=Td_bp_cond)
+        self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_eco)
+        self.nw.components['main condenser'].set_attr(ttd_u=ttd_u_cond)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=ttd_l_evap)
+
         self.nw.solve('design')
         # self.nw.print_results()
 
@@ -285,7 +292,7 @@ class PowerPlant():
 
         T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
         s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
-        T_range_condenser = np.geomspace(T_steam_wf_low_P + 0.1, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 100)
+        T_range_condenser = np.geomspace(T_steam_wf_low_P + 5, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 100)
         for T in T_range_condenser:
             df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
         # print(df)
@@ -337,7 +344,7 @@ for fluid in fluids:
         T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
         # for Td_bp_cond in Td_bp_conds:
-        eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2)
+        eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2, -2, 10, 10)
         if not np.isnan(eff):
             # PowerPlantWithIHE.generate_diagram()
             # PowerPlantWithIHE.plot_process(fn=fluid)
