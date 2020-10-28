@@ -269,35 +269,35 @@ class PowerPlant():
         self.diagram.set_isolines(T=iso_T)
         self.diagram.calc_isolines()
 
-    def plot_Ts(self, fn='fluid'):
+    def plot_Ts(self, fn='fluid', Td_bp_cond=1):
 
         T_before_turbine = self.nw.connections['lsv_tur'].T.val
         s_before_turbine = PSI('S', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
 
         T_after_turbine = self.nw.connections['tur_ihe'].T.val
-        s_after_turbine = PSI('S', 'T', T_after_turbine + 273.15, 'P', self.nw.connections['tur_ihe'].p.val * 100000, self.working_fluid)
+        s_after_turbine = PSI('S', 'T', T_after_turbine + 273.15, 'P', self.nw.connections['tur_ihe'].p.val * 1e5, self.working_fluid)
 
         T_before_condenser = self.nw.connections['ihe_cond'].T.val
-        s_before_condenser = PSI('S', 'T', T_before_condenser + 273.15, 'P', self.nw.connections['ihe_cond'].p.val * 100000, self.working_fluid)
+        s_before_condenser = PSI('S', 'T', T_before_condenser + 273.15, 'P', self.nw.connections['ihe_cond'].p.val * 1e5, self.working_fluid)
 
         T_after_condenser = self.nw.connections['cond_fwp'].T.val
         s_after_condenser = PSI('S', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
 
         T_after_pump = self.nw.connections['fwp_ihe'].T.val
-        s_after_pump = PSI('S', 'T', T_after_pump + 273.15, 'P', self.nw.connections['fwp_ihe'].p.val * 100000, self.working_fluid)
+        s_after_pump = PSI('S', 'T', T_after_pump + 273.15, 'P', self.nw.connections['fwp_ihe'].p.val * 1e5, self.working_fluid)
 
         T_after_ihe = self.nw.connections['ihe_eco'].T.val
-        s_after_ihe = PSI('S', 'T', T_after_ihe + 273.15, 'P', self.nw.connections['ihe_eco'].p.val * 100000, self.working_fluid)
+        s_after_ihe = PSI('S', 'T', T_after_ihe + 273.15, 'P', self.nw.connections['ihe_eco'].p.val * 1e5, self.working_fluid)
 
         T_after_preheater = self.nw.connections['eco_dr'].T.val
-        s_after_preheater = PSI('S', 'T', T_after_preheater + 273.15, 'P', self.nw.connections['eco_dr'].p.val * 100000, self.working_fluid)
+        s_after_preheater = PSI('S', 'T', T_after_preheater + 273.15, 'P', self.nw.connections['eco_dr'].p.val * 1e5, self.working_fluid)
 
         state = CP.AbstractState('HEOS', self.working_fluid)
         T_crit = state.trivial_keyed_output(CP.iT_critical)
         df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
 
-        P0 = self.nw.connections['cond_fwp'].p.val * 100000
-        P1 = self.nw.connections['lsv_tur'].p.val * 100000
+        P0 = self.nw.connections['cond_fwp'].p.val * 1e5
+        P1 = self.nw.connections['lsv_tur'].p.val * 1e5
         T_range = np.linspace(273.15, T_crit, 1000)
         for T in T_range:
             df.loc[T, 's_l'] = PSI('S', 'T', T, 'Q', 0, self.working_fluid)
@@ -311,7 +311,7 @@ class PowerPlant():
 
         T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
         s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
-        T_range_condenser = np.linspace(T_steam_wf_low_P + 10, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 200)
+        T_range_condenser = np.linspace(T_steam_wf_low_P + Td_bp_cond, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 200)
         for T in T_range_condenser:
             df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
         # print(df)
@@ -355,7 +355,6 @@ fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113',
 Td_bp_conds = np.linspace(2, 30, 14)
 for fluid in fluids:
     try:
-        # for some testing
         print('+' * 75)
         sensitivity_analysis = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
         PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
@@ -365,7 +364,7 @@ for fluid in fluids:
         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
         for Td_bp_cond in Td_bp_conds:
             eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2, 10, 10)
-            # PowerPlantWithIHE.plot_Ts(fn=fluid)
+            PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
             sensitivity_analysis.loc[Td_bp_cond, 'power_output']=PowerPlantWithIHE.print_result()[0]
             sensitivity_analysis.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()[1]
         fig, ax = plt.subplots()
@@ -434,6 +433,32 @@ for fluid in fluids:
 # print('Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
 # print('Extraction 1: {} bar'.format(round(pop.champion_x[0], 4)))
 # print('Extraction 2: {} bar'.format(round(pop.champion_x[1], 4)))
+
+# fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
+# Td_bp_conds = [2, 4, 6, 8, 10]
+# for fluid in fluids:
+#     try:
+#         print('+' * 75)
+#         PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
+#         print('Working fluid:', fluid)
+#         state = CP.AbstractState('HEOS', fluid)
+#         T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+#         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
+#         eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2, -2, 10, 10)
+#         if not np.isnan(eff):
+#             # PowerPlantWithIHE.generate_diagram()
+#             # PowerPlantWithIHE.plot_process(fn=fluid)
+#             PowerPlantWithIHE.print_result()
+#             PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
+#         else:
+#             print('+' * 75)
+#             print(fluid)
+#             print('+' * 75)
+#     except:
+#         print('+' * 75)
+#         print(fluid)
+#         print('+' * 75)
+#         pass
 
 
 # class PowerPlantWithoutIHE():
