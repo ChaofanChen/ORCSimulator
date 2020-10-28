@@ -351,29 +351,14 @@ class PowerPlant():
         plt.savefig('ORC_Ts_plot_' + fn + '.png')
         # plt.show()
 
-fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] # Isobutane
-Td_bp_conds = np.linspace(2, 30, 14)
-for fluid in fluids:
-    try:
-        print('+' * 75)
-        sensitivity_analysis = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-        PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
-        print('Working fluid:', fluid)
-        state = CP.AbstractState('HEOS', fluid)
-        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
-        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
-        for Td_bp_cond in Td_bp_conds:
-            eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2, 10, 10)
-            PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
-            sensitivity_analysis.loc[Td_bp_cond, 'power_output']=PowerPlantWithIHE.print_result()[0]
-            sensitivity_analysis.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()[1]
+    def plot_sensitivity_analysis(self, sensitivity_analysis, fn='fluid', kw='Td_bp'):
         fig, ax = plt.subplots()
         ax.plot(sensitivity_analysis.index, sensitivity_analysis['power_output'], color='blue', marker="o")
-        ax.set(xlabel='Td_bp of condenser [°C]', ylabel='Power output [MW]')
+        ax.set(xlabel='Td_bp of '+ kw +' [°C]', ylabel='Power output [MW]')
         ax2=ax.twinx()
         ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="*")
         ax2.set(ylabel='Thermal efficiency [%]')
-        plt.ylim(13.5, 18)
+        plt.ylim(10, 20)
         ax.yaxis.label.set_color('blue')
         ax.yaxis.label.set_size(12)
         ax.xaxis.label.set_size(12)
@@ -383,7 +368,38 @@ for fluid in fluids:
         ax2.tick_params(axis='y', colors='red')
         ax.grid()
         # plt.show()
-        plt.savefig('diff_Td_bp_cond_plot_' + fluid + '.png')
+        plt.savefig('diff_Td_bp_' + kw + '_plot_' + fn + '.png')
+
+fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] # Isobutane
+Td_bp_conds = np.linspace(2, 10, 9)
+Td_bp_ecos = np.linspace(-10, -0.5, 11)
+for fluid in fluids:
+    try:
+        print('+' * 75)
+        sensitivity_analysis_Td_bp_eco = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        sensitivity_analysis_Td_bp_cond = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
+        print('Working fluid:', fluid)
+        state = CP.AbstractState('HEOS', fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
+
+        for Td_bp_eco in Td_bp_ecos:
+            eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2, Td_bp_eco, 10, 10)
+            # PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
+            sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'power_output'], \
+            sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+
+        PowerPlantWithIHE.plot_sensitivity_analysis(sensitivity_analysis_Td_bp_eco, fn=fluid, kw='preheater')
+
+        for Td_bp_cond in Td_bp_conds:
+            eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2, 10, 10)
+            # PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
+            sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'power_output'], \
+            sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+
+        PowerPlantWithIHE.plot_sensitivity_analysis(sensitivity_analysis_Td_bp_cond, fn=fluid, kw='condense')
+
     except:
         print('+' * 75)
         print(fluid)
