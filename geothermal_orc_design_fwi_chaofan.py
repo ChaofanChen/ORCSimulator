@@ -190,10 +190,12 @@ class PowerPlant():
         eco_dr.set_attr(Td_bp=None)
         air_cond.set_attr(ttd_u=None)
         evap_brine.set_attr(ttd_l=None)
+        gs_es.set_attr(T=None)
+        gb_eb.set_attr(T=None)
 
         #------------- for optimization setting ------------------------------------
-        # self.nw.connections['geosteam'].set_attr(m=20)
-        # self.nw.connections['geobrine'].set_attr(m=180)
+        # self.nw.connections['geosteam'].set_attr(m=20, T=140)
+        # self.nw.connections['geobrine'].set_attr(m=180, T=140)
         # self.nw.connections['reinjection'].set_attr(T=70)
         # self.nw.components['main condenser'].set_attr(ttd_u=10)
         # self.nw.components['brine evaporator'].set_attr(ttd_l=10)
@@ -201,10 +203,10 @@ class PowerPlant():
         # self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
         #---------------------------------------------------------------------------
 
-    def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Td_bp_eco, ttd_u_cond, ttd_l_evap):
+    def calculate_efficiency(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Td_bp_eco, ttd_u_cond, ttd_l_evap):
 
-        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
-        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.connections['ihe_cond'].set_attr(Td_bp=Td_bp_cond)
         self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_eco)
@@ -244,10 +246,10 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
-    def calculate_efficiency_off_design(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
+    def calculate_efficiency_off_design(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection):
 
-        self.nw.connections['geosteam'].set_attr(m=20)
-        self.nw.connections['geobrine'].set_attr(m=180)
+        self.nw.connections['geosteam'].set_attr(m=20, T=140)
+        self.nw.connections['geobrine'].set_attr(m=180, T=140)
         self.nw.connections['reinjection'].set_attr(T=70)
         self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
         self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
@@ -256,8 +258,8 @@ class PowerPlant():
         self.nw.solve('design')
         self.nw.save('ORC')
 
-        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
-        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
         self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.solve('offdesign', design_path='ORC')
         # self.nw.print_results()
@@ -435,7 +437,7 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 #     state = CP.AbstractState('HEOS', fluid)
 #     T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
 #     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
-#     eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2, -2, 10, 10)
+#     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 2, -2, 10, 10)
 #     sensitivity_analysis_working_fluid.loc[fluid, 'power_output'], \
 #     sensitivity_analysis_working_fluid.loc[fluid, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
 #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
@@ -461,28 +463,28 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 #         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 #
 #         # for Td_bp_eco in Td_bp_ecos:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 2, Td_bp_eco, 10, 10)
+#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 2, Td_bp_eco, 10, 10)
 #         #     # PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
 #         #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'power_output'], \
 #         #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
 #         # plot_sensitivity_analysis(sensitivity_analysis_Td_bp_eco, fn=fluid, kw='Td_bp_preheater')
 #
 #         # for T_pinch_cond in T_pinch_conds:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 4, -2, T_pinch_cond, 10)
+#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, T_pinch_cond, 10)
 #         #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
 #         #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'power_output'], \
 #         #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
 #         # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_cond, fn=fluid, kw='T_pinch_cond')
 #
 #         # for T_pinch_ph in T_pinch_phs:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, 4, -2, 10, T_pinch_ph)
+#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, 10, T_pinch_ph)
 #         #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
 #         #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'power_output'], \
 #         #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
 #         # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_ph, fn=fluid, kw='T_pinch_ph')
 #
 #         for Td_bp_cond in Td_bp_conds:
-#             eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2, 10, 10)
+#             eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, Td_bp_cond, -2, 10, 10)
 #             PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
 #             sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'power_output'], \
 #             sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
@@ -574,17 +576,25 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 # plt.show()
 
 # ---------------------------------------------------------------------------------------------------------------------
-off_design_performance = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+off_design_performance_f = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+off_design_performance_T_pro = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 
-steam_mass_fractions = np.linspace(0.1, 0.09, 2)
+steam_mass_fractions = np.linspace(0.1, 0.09, 10)
+T_productions = np.linspace(142, 138, 11)
 PowerPlantOffDesign = PowerPlant(working_fluid='Isopentane')
-for steam_mass_fraction in steam_mass_fractions:
-    offeff = PowerPlantOffDesign.calculate_efficiency_off_design(200, steam_mass_fraction, 70)
-    off_design_performance.loc[steam_mass_fraction, 'power_output'],\
-    off_design_performance.loc[steam_mass_fraction, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
 
-plot_sensitivity_analysis(off_design_performance, fn='Isopentane', kw='Steam mass fraction')
+# for steam_mass_fraction in steam_mass_fractions:
+#     offeff = PowerPlantOffDesign.calculate_efficiency_off_design(140, 200, steam_mass_fraction, 70)
+#     off_design_performance_f.loc[steam_mass_fraction, 'power_output'],\
+#     off_design_performance_f.loc[steam_mass_fraction, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
+# plot_sensitivity_analysis(off_design_performance_f, fn='Isopentane', kw='Steam mass fraction')
 
+for T_production in T_productions:
+    offeff = PowerPlantOffDesign.calculate_efficiency_off_design(T_production, 200, 0.1, 70)
+    off_design_performance_T_pro.loc[T_production, 'power_output'], \
+    off_design_performance_T_pro.loc[T_production, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
+
+plot_sensitivity_analysis(off_design_performance_T_pro, fn='Isopentane', kw='T_pro')
 
 
 
