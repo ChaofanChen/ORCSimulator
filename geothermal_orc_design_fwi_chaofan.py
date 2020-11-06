@@ -170,7 +170,7 @@ class PowerPlant():
         # condensing
         ihe.set_attr(pr1=1, pr2=1, offdesign=['kA_char'])
         air_cond.set_attr(pr1=1, pr2=1, ttd_u=10, design=['ttd_u'], offdesign=['kA_char'])
-        feed_working_fluid_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
+        feed_working_fluid_pump.set_attr(design=['eta_s']) # has already set eta_s, thus drop 'offdesign=['eta_s_char']'
 
         # steam generator
         evap_steam.set_attr(pr1=0.99, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
@@ -192,13 +192,13 @@ class PowerPlant():
         evap_brine.set_attr(ttd_l=None)
 
         #------------- for optimization setting ------------------------------------
-        self.nw.connections['geosteam'].set_attr(m=20)
-        self.nw.connections['geobrine'].set_attr(m=180)
-        self.nw.connections['reinjection'].set_attr(T=70)
-        self.nw.components['main condenser'].set_attr(ttd_u=10)
-        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
-        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
+        # self.nw.connections['geosteam'].set_attr(m=20)
+        # self.nw.connections['geobrine'].set_attr(m=180)
+        # self.nw.connections['reinjection'].set_attr(T=70)
+        # self.nw.components['main condenser'].set_attr(ttd_u=10)
+        # self.nw.components['brine evaporator'].set_attr(ttd_l=10)
+        # self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
+        # self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
         #---------------------------------------------------------------------------
 
     def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Td_bp_eco, ttd_u_cond, ttd_l_evap):
@@ -244,6 +244,35 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
+    def calculate_efficiency_off_design(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
+
+        self.nw.connections['geosteam'].set_attr(m=20)
+        self.nw.connections['geobrine'].set_attr(m=180)
+        self.nw.connections['reinjection'].set_attr(T=70)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
+        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
+        self.nw.components['main condenser'].set_attr(ttd_u=10)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
+        self.nw.solve('design')
+        self.nw.save('ORC')
+
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
+        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
+        self.nw.solve('offdesign', design_path='ORC')
+        # self.nw.print_results()
+
+        # for cp in self.nw.components.values():
+        #     if isinstance(cp, heat_exchanger):
+        #         if cp.Q.val > 0:
+        #             return np.nan
+        # if self.nw.connections['tur_ihe'].T.val < self.nw.connections['ihe_cond'].T.val:
+        #     sys.exit()
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
     def print_result(self):
 
         for cp in self.nw.components.values():
@@ -257,42 +286,42 @@ class PowerPlant():
         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
         return power / 1e6, eta_th * 100
 
-    def plot_process(self, fn='somename'):
-
-        result_dict = {
-            prop: [
-                conn.get_attr(prop).val for conn in self.nw.conns.index
-                if conn.fluid.val[self.working_fluid] == 1
-            ] for prop in ['p', 'h', 's', 'T']
-        }
-
-        self.diagram.set_limits(
-            x_min=min(result_dict['h']) - 50,
-            x_max=max(result_dict['h']) + 50,
-            y_min=min(result_dict['p']) / 2,
-            y_max=max(result_dict['p']) * 10
-        )
-        self.diagram.draw_isolines('logph')
-        self.diagram.ax.scatter(result_dict['h'], result_dict['p'], zorder=100)
-        self.diagram.save(fn + '_logph.pdf')
-
-        self.diagram.set_limits(
-            x_min=min(result_dict['s']) - 50,
-            x_max=max(result_dict['s']) + 50,
-            y_min=min(result_dict['T']) - 25,
-            y_max=PSI('T_critical', self.working_fluid) + 25 - 273.15
-        )
-        self.diagram.draw_isolines('Ts')
-        self.diagram.ax.scatter(result_dict['s'], result_dict['T'], zorder=100)
-        self.diagram.save(fn + '_Ts.pdf')
-
-    def generate_diagram(self):
-
-        self.diagram = FluidPropertyDiagram(self.working_fluid)
-        self.diagram.set_unit_system(T='°C', p='bar', h='kJ/kg')
-        iso_T = np.arange(0, 201, 25)
-        self.diagram.set_isolines(T=iso_T)
-        self.diagram.calc_isolines()
+    # def plot_process(self, fn='somename'):
+    #
+    #     result_dict = {
+    #         prop: [
+    #             conn.get_attr(prop).val for conn in self.nw.conns.index
+    #             if conn.fluid.val[self.working_fluid] == 1
+    #         ] for prop in ['p', 'h', 's', 'T']
+    #     }
+    #
+    #     self.diagram.set_limits(
+    #         x_min=min(result_dict['h']) - 50,
+    #         x_max=max(result_dict['h']) + 50,
+    #         y_min=min(result_dict['p']) / 2,
+    #         y_max=max(result_dict['p']) * 10
+    #     )
+    #     self.diagram.draw_isolines('logph')
+    #     self.diagram.ax.scatter(result_dict['h'], result_dict['p'], zorder=100)
+    #     self.diagram.save(fn + '_logph.pdf')
+    #
+    #     self.diagram.set_limits(
+    #         x_min=min(result_dict['s']) - 50,
+    #         x_max=max(result_dict['s']) + 50,
+    #         y_min=min(result_dict['T']) - 25,
+    #         y_max=PSI('T_critical', self.working_fluid) + 25 - 273.15
+    #     )
+    #     self.diagram.draw_isolines('Ts')
+    #     self.diagram.ax.scatter(result_dict['s'], result_dict['T'], zorder=100)
+    #     self.diagram.save(fn + '_Ts.pdf')
+    #
+    # def generate_diagram(self):
+    #
+    #     self.diagram = FluidPropertyDiagram(self.working_fluid)
+    #     self.diagram.set_unit_system(T='°C', p='bar', h='kJ/kg')
+    #     iso_T = np.arange(0, 201, 25)
+    #     self.diagram.set_isolines(T=iso_T)
+    #     self.diagram.calc_isolines()
 
     def plot_Ts(self, fn='fluid', Td_bp_cond=1):
 
@@ -396,6 +425,7 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
     # fig.autofmt_xdate()
     plt.savefig('diff_' + kw + '_plot_' + fn + '.png')
 
+# ---------------------------------------------------------------------------------------------------------------------
 # fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
 # sensitivity_analysis_working_fluid = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 # for fluid in fluids:
@@ -411,7 +441,7 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
 # plot_sensitivity_analysis(sensitivity_analysis_working_fluid, fn='', kw='Working fluid')
 
-
+# ---------------------------------------------------------------------------------------------------------------------
 # fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] #, Isobutane
 # Td_bp_conds = np.linspace(1, 34, 68)
 # # Td_bp_ecos = np.linspace(-8, -1, 9)
@@ -465,89 +495,101 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 #         print('+' * 75)
 #         pass
 
-import pygmo as pg
+# ---------------------------------------------------------------------------------------------------------------------
+# import pygmo as pg
+#
+# class optimization_problem():
+#
+#     def fitness(self, x):
+#         f1 = 1 / self.model.calculate_efficiency_opt(x)
+#         ci1 = -x[0] + x[1]
+#         print(x)
+#         return [f1, ci1]
+#
+#     def get_nobj(self):
+#         """Return number of objectives."""
+#         return 1
+#
+#     # equality constraints
+#     def get_nec(self):
+#         return 0
+#
+#     # inequality constraints
+#     def get_nic(self):
+#         return 1
+#
+#     def get_bounds(self):
+#         """Return bounds of decision variables."""
+#         return ([2, -10], [40, 0])
+#
+# optimize = optimization_problem()
+# optimize.model = PowerPlant(working_fluid='Isopentane')
+# prob = pg.problem(optimize)
+# num_gen = 15
+#
+# pop = pg.population(prob, size=10)
+# algo = pg.algorithm(pg.ihs(gen=num_gen))
+#
+# result = {'champion': [], 'efficiency': [], 'generation': [],
+#           'extraction 1': [], 'extraction 2': []}
+#
+# for gen in range(num_gen):
+#     result["generation"].append(gen)
+#     result["champion"].append(100/pop.champion_f[0])
+#
+#     decision_var = pop.get_x()
+#     for pressure in decision_var:
+#         result['extraction 1'].append(pressure[0])
+#         result['extraction 2'].append(pressure[1])
+#
+#     fitness = pop.get_f()
+#     for efficiency in fitness:
+#         result['efficiency'].append(100/efficiency[0])
+#
+#     print()
+#     print('Evolution: {}'.format(gen))
+#     print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+#     pop = algo.evolve(pop)
+#
+# print()
+# print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+# print('Td_bp before condenser: {} °C'.format(round(pop.champion_x[0], 4)))
+# print('Td_bp after preheater: {} °C'.format(round(pop.champion_x[1], 4)))
+#
+# # scatter plot
+# cm = plt.cm.get_cmap('RdYlBu')
+# sc = plt.scatter(result['extraction 2'], result['extraction 1'], linewidth=0.25,
+#                  c=result['efficiency'], cmap=cm, alpha=0.5, edgecolors='black')
+# plt.scatter(pop.champion_x[1], pop.champion_x[0], marker='x', linewidth=1,
+#             c='red')
+# plt.annotate('Optimum', xy=(pop.champion_x[1], pop.champion_x[0]),
+#              xytext=(pop.champion_x[1]+2, pop.champion_x[0]+2),
+#              arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.5',
+#                              color='red')
+#              )
+# plt.ylabel('Td_bp before condenser in °C')
+# plt.xlabel('Td_bp after preheater in °C')
+# plt.colorbar(sc, label='Cycle thermal efficiency (%)')
+# plt.savefig("Td_bp_optimization.png")
+# plt.show()
 
-class optimization_problem():
+# ---------------------------------------------------------------------------------------------------------------------
+off_design_performance = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 
-    def fitness(self, x):
-        f1 = 1 / self.model.calculate_efficiency_opt(x)
-        ci1 = -x[0] + x[1]
-        print(x)
-        return [f1, ci1]
+steam_mass_fractions = np.linspace(0.1, 0.09, 2)
+PowerPlantOffDesign = PowerPlant(working_fluid='Isopentane')
+for steam_mass_fraction in steam_mass_fractions:
+    offeff = PowerPlantOffDesign.calculate_efficiency_off_design(200, steam_mass_fraction, 70)
+    off_design_performance.loc[steam_mass_fraction, 'power_output'],\
+    off_design_performance.loc[steam_mass_fraction, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
 
-    def get_nobj(self):
-        """Return number of objectives."""
-        return 1
-
-    # equality constraints
-    def get_nec(self):
-        return 0
-
-    # inequality constraints
-    def get_nic(self):
-        return 1
-
-    def get_bounds(self):
-        """Return bounds of decision variables."""
-        return ([2, -10], [40, 0])
-
-optimize = optimization_problem()
-optimize.model = PowerPlant(working_fluid='Isopentane')
-prob = pg.problem(optimize)
-num_gen = 15
-
-pop = pg.population(prob, size=10)
-algo = pg.algorithm(pg.ihs(gen=num_gen))
-
-result = {'champion': [], 'efficiency': [], 'generation': [],
-          'extraction 1': [], 'extraction 2': []}
-
-for gen in range(num_gen):
-    result["generation"].append(gen)
-    result["champion"].append(100/pop.champion_f[0])
-
-    decision_var = pop.get_x()
-    for pressure in decision_var:
-        result['extraction 1'].append(pressure[0])
-        result['extraction 2'].append(pressure[1])
-
-    fitness = pop.get_f()
-    for efficiency in fitness:
-        result['efficiency'].append(100/efficiency[0])
-
-    print()
-    print('Evolution: {}'.format(gen))
-    print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
-    pop = algo.evolve(pop)
-
-print()
-print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
-print('Td_bp before condenser: {} °C'.format(round(pop.champion_x[0], 4)))
-print('Td_bp after preheater: {} °C'.format(round(pop.champion_x[1], 4)))
-
-# scatter plot
-cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter(result['extraction 2'], result['extraction 1'], linewidth=0.25,
-                 c=result['efficiency'], cmap=cm, alpha=0.5, edgecolors='black')
-plt.scatter(pop.champion_x[1], pop.champion_x[0], marker='x', linewidth=1,
-            c='red')
-plt.annotate('Optimum', xy=(pop.champion_x[1], pop.champion_x[0]),
-             xytext=(pop.champion_x[1]+2, pop.champion_x[0]+2),
-             arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.5',
-                             color='red')
-             )
-plt.ylabel('Td_bp before condenser in °C')
-plt.xlabel('Td_bp after preheater in °C')
-plt.colorbar(sc, label='Cycle thermal efficiency (%)')
-plt.savefig("Td_bp_optimization.png")
-plt.show()
+plot_sensitivity_analysis(off_design_performance, fn='Isopentane', kw='Steam mass fraction')
 
 
 
 
 
-
-
+# ---------------------------------------------------------------------------------------------------------------------
 # class PowerPlantWithoutIHE():
 #
 #     def __init__(self, working_fluid):
