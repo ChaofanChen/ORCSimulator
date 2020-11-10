@@ -20,6 +20,27 @@ import logging
 logger.define_logging(screen_level=logging.ERROR)
 
 
+def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
+    fig, ax = plt.subplots()
+    ax.plot(sensitivity_analysis.index, sensitivity_analysis['power_output'], color='blue', marker="o")
+    ax.set(xlabel=kw +' [°C]', ylabel='Power output [MW]')
+    ax2=ax.twinx()
+    ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="*")
+    ax2.set(ylabel='Thermal efficiency [%]')
+    # plt.ylim(10, 20)
+    ax.yaxis.label.set_color('blue')
+    ax.yaxis.label.set_size(12)
+    ax.xaxis.label.set_size(12)
+    # ax.set_ticklabel(exclude_overlapping=True)
+    ax.tick_params(axis='y', colors='blue')
+    ax2.yaxis.label.set_color('red')
+    ax2.yaxis.label.set_size(12)
+    ax2.tick_params(axis='y', colors='red')
+    ax.grid()
+    # plt.show()
+    # fig.autofmt_xdate()
+    plt.savefig('diff_' + kw + '_plot_' + fn + '.png')
+
 class PowerPlant():
 
     def __init__(self, working_fluid):
@@ -214,7 +235,7 @@ class PowerPlant():
         self.nw.components['brine evaporator'].set_attr(ttd_l=ttd_l_evap)
 
         self.nw.solve('design')
-        # self.nw.print_results()
+        self.nw.print_results()
 
         # for cp in self.nw.components.values():
         #     if isinstance(cp, heat_exchanger):
@@ -406,27 +427,6 @@ class PowerPlant():
         plt.savefig('ORC_Ts_plot_' + fn + '.png')
         # plt.show()
 
-def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
-    fig, ax = plt.subplots()
-    ax.plot(sensitivity_analysis.index, sensitivity_analysis['power_output'], color='blue', marker="o")
-    ax.set(xlabel=kw +' [°C]', ylabel='Power output [MW]')
-    ax2=ax.twinx()
-    ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="*")
-    ax2.set(ylabel='Thermal efficiency [%]')
-    plt.ylim(10, 20)
-    ax.yaxis.label.set_color('blue')
-    ax.yaxis.label.set_size(12)
-    ax.xaxis.label.set_size(12)
-    # ax.set_ticklabel(exclude_overlapping=True)
-    ax.tick_params(axis='y', colors='blue')
-    ax2.yaxis.label.set_color('red')
-    ax2.yaxis.label.set_size(12)
-    ax2.tick_params(axis='y', colors='red')
-    ax.grid()
-    # plt.show()
-    # fig.autofmt_xdate()
-    plt.savefig('diff_' + kw + '_plot_' + fn + '.png')
-
 # ---------------------------------------------------------------------------------------------------------------------
 # fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
 # sensitivity_analysis_working_fluid = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
@@ -444,8 +444,8 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 # plot_sensitivity_analysis(sensitivity_analysis_working_fluid, fn='', kw='Working fluid')
 
 # ---------------------------------------------------------------------------------------------------------------------
-# fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] #, Isobutane
-# Td_bp_conds = np.linspace(1, 34, 68)
+# fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] #, 'Isobutane',
+# Td_bp_conds = np.linspace(1, 34, 17)
 # # Td_bp_ecos = np.linspace(-8, -1, 9)
 # T_pinch_conds = np.linspace(15, 1, 5)
 # T_pinch_phs = np.linspace(15, 1, 5)
@@ -576,248 +576,240 @@ def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
 # plt.show()
 
 # ---------------------------------------------------------------------------------------------------------------------
-off_design_performance_f = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-off_design_performance_T_pro = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-
-steam_mass_fractions = np.linspace(0.1, 0.09, 10)
-T_productions = np.linspace(142, 138, 11)
-PowerPlantOffDesign = PowerPlant(working_fluid='Isopentane')
-
-# for steam_mass_fraction in steam_mass_fractions:
-#     offeff = PowerPlantOffDesign.calculate_efficiency_off_design(140, 200, steam_mass_fraction, 70)
-#     off_design_performance_f.loc[steam_mass_fraction, 'power_output'],\
-#     off_design_performance_f.loc[steam_mass_fraction, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
-# plot_sensitivity_analysis(off_design_performance_f, fn='Isopentane', kw='Steam mass fraction')
-
-for T_production in T_productions:
-    offeff = PowerPlantOffDesign.calculate_efficiency_off_design(T_production, 200, 0.1, 70)
-    off_design_performance_T_pro.loc[T_production, 'power_output'], \
-    off_design_performance_T_pro.loc[T_production, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
-
-plot_sensitivity_analysis(off_design_performance_T_pro, fn='Isopentane', kw='T_pro')
+# off_design_performance_f = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+# off_design_performance_T_pro = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+#
+# steam_mass_fractions = np.linspace(0.1, 0.09, 10)
+# T_productions = np.linspace(142, 138, 11)
+# PowerPlantOffDesign = PowerPlant(working_fluid='Isopentane')
+#
+# # for steam_mass_fraction in steam_mass_fractions:
+# #     offeff = PowerPlantOffDesign.calculate_efficiency_off_design(140, 200, steam_mass_fraction, 70)
+# #     off_design_performance_f.loc[steam_mass_fraction, 'power_output'],\
+# #     off_design_performance_f.loc[steam_mass_fraction, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
+# # plot_sensitivity_analysis(off_design_performance_f, fn='Isopentane', kw='Steam mass fraction')
+#
+# for T_production in T_productions:
+#     offeff = PowerPlantOffDesign.calculate_efficiency_off_design(T_production, 200, 0.1, 70)
+#     off_design_performance_T_pro.loc[T_production, 'power_output'], \
+#     off_design_performance_T_pro.loc[T_production, 'thermal_efficiency']= PowerPlantOffDesign.print_result()
+#
+# plot_sensitivity_analysis(off_design_performance_T_pro, fn='Isopentane', kw='T_pro')
 
 
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-# class PowerPlantWithoutIHE():
-#
-#     def __init__(self, working_fluid):
-#
-#         self.working_fluid = working_fluid
-#         fluids = ['water', self.working_fluid, 'air']
-#         self.nw = network(fluids=fluids)
-#         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
-#
-#         # geo parameters
-#
-#         geo_mass_flow = 200
-#         geo_steam_share = 0.1
-#         T_brine_in = 140
-#         T_reinjection = 70
-#
-#         # ambient parameters
-#
-#         T_amb = 5
-#         p_amb = 1
-#
-#         # main components
-#
-#         geo_steam = source('steam source')
-#         geo_brine = source('brine source')
-#         geo_reinjection = sink('reinjection well')
-#
-#         air_in = source('ambient air source')
-#         air_out = sink('ambient air sink')
-#         air_cond = condenser('main condenser')
-#
-#         orc_cc = cycle_closer('orc cycle closer')
-#
-#         evap_steam = condenser('steam evaporator')
-#         evap_splitter = splitter('splitter evaporation')
-#         evap_merge = merge('merge evaporation')
-#         evap_steam = condenser('steam evaporator')
-#         geo_steam_pump = pump('geosteam condensate pump')
-#         evap_brine = heat_exchanger('brine evaporator')
-#         dr = drum('drum')
-#
-#         eco = heat_exchanger('economiser')
-#         feed_working_fluid_pump = pump('feed working fluid pump')
-#         geo_merge = merge('brine merge')
-#
-#         tur = turbine('turbine')
-#
-#         ls_valve = valve('live steam valve')
-#
-#         # ihe = heat_exchanger('internal heat exchanger')
-#
-#         # busses
-#         power_bus = bus('power output')
-#         power_bus.add_comps(
-#             {'c': tur, 'char': -1},
-#             {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
-#         )
-#
-#         geothermal_bus = bus('thermal input')
-#         geothermal_bus.add_comps(
-#             {'c': eco, 'char': -1}, {'c': evap_brine, 'char': -1},
-#             {'c': evap_steam, 'char': -1}
-#         )
-#
-#         self.nw.add_busses(power_bus, geothermal_bus)
-#
-#         # turbine to condenser
-#         ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
-#         lsv_tur = connection(ls_valve, 'out1', tur, 'in1')
-#         tur_cond = connection(tur, 'out1', air_cond, 'in1')
-#         self.nw.add_conns(ls_in, lsv_tur, tur_cond)
-#
-#         # condenser to steam generator
-#         cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1')
-#         fwp_eco = connection(feed_working_fluid_pump, 'out1', eco, 'in2')
-#         self.nw.add_conns(cond_fwp, fwp_eco)
-#
-#         # steam generator
-#         eco_dr = connection(eco, 'out2', dr, 'in1')
-#         dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
-#         esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
-#         esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
-#         eb_em = connection(evap_brine, 'out2', evap_merge, 'in1')
-#         es_em = connection(evap_steam, 'out2', evap_merge, 'in2')
-#         em_dr = connection(evap_merge, 'out1', dr, 'in2')
-#         ls_out = connection(dr, 'out2', orc_cc, 'in1')
-#         self.nw.add_conns(eco_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
-#
-#         # air cold side
-#         air_cold = connection(air_in, 'out1', air_cond, 'in2')
-#         air_hot = connection(air_cond, 'out2', air_out, 'in1')
-#         self.nw.add_conns(air_cold, air_hot)
-#
-#         # geo source
-#         gs_es = connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
-#         es_gsp = connection(evap_steam, 'out1', geo_steam_pump, 'in1')
-#         gsp_gm = connection(geo_steam_pump, 'out1', geo_merge, 'in1')
-#         gb_eb = connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
-#         eb_gm = connection(evap_brine, 'out1', geo_merge, 'in2')
-#         self.nw.add_conns(gs_es, es_gsp, gsp_gm, gb_eb, eb_gm)
-#
-#         gm_eco = connection(geo_merge, 'out1', eco, 'in1')
-#         eco_gr = connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
-#         self.nw.add_conns(gm_eco, eco_gr)
-#
-#         # fluid settings
-#         cond_fwp.set_attr(fluid={self.working_fluid: 1, 'air': 0, 'water': 0})
-#         air_cold.set_attr(fluid={self.working_fluid: 0, 'air': 1, 'water': 0})
-#         gs_es.set_attr(fluid={self.working_fluid: 0, 'air': 0, 'water': 1})
-#         gb_eb.set_attr(fluid={self.working_fluid: 0, 'air': 0, 'water': 1})
-#
-#         # connection parameters
-#         ls_stable_p0 = PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) / 1e5
-#         lsv_tur.set_attr(p0=ls_stable_p0)
-#         ws_stable_h0 = (
-#                                PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) + 0.5 * (
-#                                PSI('H', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) -
-#                                PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid)
-#                        )
-#                        ) / 1e3
-#         # tur_cond.set_attr(h=ws_stable_h0)
-#         tur_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
-#         fwp_eco.set_attr(h=ref(cond_fwp, 1, 1e3))
-#
-#         # steam generator
-#         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
-#         gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share),
-#                        p=PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, 'water') / 1e5, T=T_brine_in, state='l')
-#
-#         em_dr.set_attr()
-#         eb_em.set_attr(x=0.5)
-#         es_em.set_attr(x=0.5, design=['x'])
-#         eb_gm.set_attr(T=T_brine_in - 20)
-#
-#         eco_dr.set_attr(Td_bp=-2)
-#
-#         # main condenser
-#         air_cold.set_attr(p=p_amb, T=T_amb)
-#         air_hot.set_attr(T=15)
-#
-#         # component parameters
-#         # turbines
-#         tur.set_attr(design=['eta_s'], offdesign=['cone', 'eta_s_char'])
-#         ls_valve.set_attr(pr=1, design=['pr'])
-#         # condensing
-#         # ihe.set_attr(pr1=1, pr2=1, offdesign=['kA_char'])
-#         air_cond.set_attr(pr1=1, pr2=1, ttd_u=10, design=['ttd_u'], offdesign=['kA_char'])
-#         feed_working_fluid_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
-#
-#         # steam generator
-#         evap_steam.set_attr(pr1=0.99, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
-#         evap_brine.set_attr(pr1=1, ttd_l=10, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
-#         eco.set_attr(pr1=1, pr2=1)
-#         geo_steam_pump.set_attr(eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char'])
-#
-#         self.nw.set_attr(iterinfo=False)
-#         self.nw.solve('design')
-#         # self.nw.print_results()
-#         tur.set_attr(eta_s=0.9)
-#         feed_working_fluid_pump.set_attr(eta_s=0.75)
-#         # tur_cond.set_attr(h=None)
-#         fwp_eco.set_attr(h=None)
-#         eb_gm.set_attr(T=None)
-#         # tur_cond.set_attr(Td_bp=None)
-#
-#     def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection):
-#
-#         self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
-#         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
-#         # self.nw.connections['reinjection'].set_attr(T=T_reinjection)
-#         self.nw.solve('design')
-#         # self.nw.print_results()
-#
-#         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
-#             return np.nan
-#         else:
-#             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-#
-#     def print_result(self):
-#         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-#         power = self.nw.busses['power output'].P.val
-#         print('Power output: {} MW'.format(round(power / 1e6, 4)))
-#         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
+class PowerPlantWithoutIHE():
 
-# fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
-# Td_bp_conds = [2, 4, 6, 8, 10]
-# for fluid in fluids:
-#     try:
-#         # for some testing
-#         print('+' * 75)
-#         PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
-#         print('Working fluid:', fluid)
-#         state = CP.AbstractState('HEOS', fluid)
-#         T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
-#         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
-#         for Td_bp_cond in Td_bp_conds:
-#             eff = PowerPlantWithIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond)
-#             if not np.isnan(eff):
-#                 PowerPlantWithIHE.generate_diagram()
-#                 PowerPlantWithIHE.plot_process(fn=fluid)
-#                 PowerPlantWithIHE.print_result()
-#             else:
-#                 print('+' * 75)
-#                 print(fluid)
-#                 print('+' * 75)
-#         # WithoutIHE = PowerPlantWithoutIHE(working_fluid=fluid)
-#         # eff_without_IHE = WithoutIHE.calculate_efficiency(200, 0.1, 70)
-#         # if not np.isnan(eff):
-#         #     PowerPlantWithIHE.generate_diagram()
-#         #     PowerPlantWithIHE.plot_process(fn=fluid)
-#         #     PowerPlantWithIHE.print_result()
-#         #     # WithoutIHE.print_result()
-#         # else:
-#         #     print('+' * 75)
-#         #     print(fluid)
-#         #     print('+' * 75)
-#     except:
-#         print('+' * 75)
-#         print(fluid)
-#         print('+' * 75)
-#         pass
+    def __init__(self, working_fluid):
+
+        self.working_fluid = working_fluid
+        fluids = ['water', self.working_fluid, 'air']
+        self.nw = network(fluids=fluids)
+        self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
+
+        # geo parameters
+
+        geo_mass_flow = 200
+        geo_steam_share = 0.1
+        T_brine_in = 140
+        T_reinjection = 70
+
+        # ambient parameters
+
+        T_amb = 5
+        p_amb = 1
+
+        # main components
+
+        geo_steam = source('steam source')
+        geo_brine = source('brine source')
+        geo_reinjection = sink('reinjection well')
+
+        air_in = source('ambient air source')
+        air_out = sink('ambient air sink')
+        air_cond = condenser('main condenser')
+
+        orc_cc = cycle_closer('orc cycle closer')
+
+        evap_steam = condenser('steam evaporator')
+        evap_splitter = splitter('splitter evaporation')
+        evap_merge = merge('merge evaporation')
+        evap_steam = condenser('steam evaporator')
+        geo_steam_pump = pump('geosteam condensate pump')
+        evap_brine = heat_exchanger('brine evaporator')
+        dr = drum('drum')
+
+        eco = heat_exchanger('economiser')
+        feed_working_fluid_pump = pump('feed working fluid pump')
+        geo_merge = merge('brine merge')
+
+        tur = turbine('turbine')
+
+        ls_valve = valve('live steam valve')
+
+        # ihe = heat_exchanger('internal heat exchanger')
+
+        # busses
+        power_bus = bus('power output')
+        power_bus.add_comps(
+            {'c': tur, 'char': -1},
+            {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
+        )
+
+        geothermal_bus = bus('thermal input')
+        geothermal_bus.add_comps(
+            {'c': eco, 'char': -1}, {'c': evap_brine, 'char': -1},
+            {'c': evap_steam, 'char': -1}
+        )
+
+        self.nw.add_busses(power_bus, geothermal_bus)
+
+        # turbine to condenser
+        ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
+        lsv_tur = connection(ls_valve, 'out1', tur, 'in1')
+        tur_cond = connection(tur, 'out1', air_cond, 'in1', label='tur_cond')
+        self.nw.add_conns(ls_in, lsv_tur, tur_cond)
+
+        # condenser to steam generator
+        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1')
+        fwp_eco = connection(feed_working_fluid_pump, 'out1', eco, 'in2')
+        self.nw.add_conns(cond_fwp, fwp_eco)
+
+        # steam generator
+        eco_dr = connection(eco, 'out2', dr, 'in1')
+        dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
+        esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
+        esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
+        eb_em = connection(evap_brine, 'out2', evap_merge, 'in1')
+        es_em = connection(evap_steam, 'out2', evap_merge, 'in2')
+        em_dr = connection(evap_merge, 'out1', dr, 'in2')
+        ls_out = connection(dr, 'out2', orc_cc, 'in1')
+        self.nw.add_conns(eco_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
+
+        # air cold side
+        air_cold = connection(air_in, 'out1', air_cond, 'in2')
+        air_hot = connection(air_cond, 'out2', air_out, 'in1')
+        self.nw.add_conns(air_cold, air_hot)
+
+        # geo source
+        gs_es = connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
+        es_gsp = connection(evap_steam, 'out1', geo_steam_pump, 'in1')
+        gsp_gm = connection(geo_steam_pump, 'out1', geo_merge, 'in1')
+        gb_eb = connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
+        eb_gm = connection(evap_brine, 'out1', geo_merge, 'in2')
+        self.nw.add_conns(gs_es, es_gsp, gsp_gm, gb_eb, eb_gm)
+
+        gm_eco = connection(geo_merge, 'out1', eco, 'in1')
+        eco_gr = connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
+        self.nw.add_conns(gm_eco, eco_gr)
+
+        # fluid settings
+        cond_fwp.set_attr(fluid={self.working_fluid: 1, 'air': 0, 'water': 0})
+        air_cold.set_attr(fluid={self.working_fluid: 0, 'air': 1, 'water': 0})
+        gs_es.set_attr(fluid={self.working_fluid: 0, 'air': 0, 'water': 1})
+        gb_eb.set_attr(fluid={self.working_fluid: 0, 'air': 0, 'water': 1})
+
+        # connection parameters
+        ls_stable_p0 = PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) / 1e5
+        lsv_tur.set_attr(p0=ls_stable_p0)
+        ws_stable_h0 = (
+                               PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) + 0.5 * (
+                               PSI('H', 'T', T_brine_in + 273.15, 'Q', 1, self.working_fluid) -
+                               PSI('H', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid)
+                       )
+                       ) / 1e3
+        tur_cond.set_attr(h0=ws_stable_h0)
+        tur_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
+        fwp_eco.set_attr(h=ref(cond_fwp, 1, 1e3))
+
+        # steam generator
+        gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
+        gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share),
+                       p=PSI('P', 'T', T_brine_in + 273.15, 'Q', 1, 'water') / 1e5, T=T_brine_in, state='l')
+
+        em_dr.set_attr()
+        eb_em.set_attr(x=0.5)
+        es_em.set_attr(x=0.5, design=['x'])
+        eb_gm.set_attr(T=T_brine_in - 20)
+
+        eco_dr.set_attr(Td_bp=-2)
+
+        # main condenser
+        air_cold.set_attr(p=p_amb, T=T_amb)
+        air_hot.set_attr(T=15)
+
+        # component parameters
+        # turbines
+        tur.set_attr(design=['eta_s'], offdesign=['cone', 'eta_s_char'])
+        ls_valve.set_attr(pr=1, design=['pr'])
+        # condensing
+        air_cond.set_attr(pr1=1, pr2=1, ttd_u=10, design=['ttd_u'], offdesign=['kA_char'])
+        feed_working_fluid_pump.set_attr(design=['eta_s'], offdesign=['eta_s_char'])
+
+        # steam generator
+        evap_steam.set_attr(pr1=0.99, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
+        evap_brine.set_attr(pr1=1, ttd_l=10, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
+        eco.set_attr(pr1=1, pr2=1)
+        geo_steam_pump.set_attr(eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char'])
+
+        self.nw.set_attr(iterinfo=False)
+        self.nw.solve('design')
+        # self.nw.print_results()
+        tur.set_attr(eta_s=0.9)
+        feed_working_fluid_pump.set_attr(eta_s=0.75)
+        # tur_cond.set_attr(h=None)
+        fwp_eco.set_attr(h=None)
+        eb_gm.set_attr(T=None)
+        tur_cond.set_attr(Td_bp=None)
+
+    def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond):
+
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
+        # self.nw.connections['reinjection'].set_attr(T=T_reinjection)
+        self.nw.connections['tur_cond'].set_attr(Td_bp=Td_bp_cond)
+        self.nw.solve('design')
+        self.nw.print_results()
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
+    def print_result(self):
+        for cp in self.nw.components.values():
+            if isinstance(cp, heat_exchanger):
+                if cp.Q.val > 0:
+                    return 0, 0
+
+        eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+        power = self.nw.busses['power output'].P.val
+        print('Power output: {} MW'.format(round(power / 1e6, 4)))
+        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
+        return power / 1e6, eta_th * 100
+
+fluids = ['R245CA'] # 'R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'
+Td_bp_conds = np.linspace(1, 30, 16)
+for fluid in fluids:
+    try:
+        # for some testing
+        print('+' * 75)
+        sen_analy_Td_bp_cond_without_IHE = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        WithoutIHE = PowerPlantWithoutIHE(working_fluid=fluid)
+        print('Working fluid:', fluid)
+        state = CP.AbstractState('HEOS', fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
+        for Td_bp_cond in Td_bp_conds:
+            eff_without_IHE = WithoutIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond)
+            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'], \
+            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency']=WithoutIHE.print_result()
+        plot_sensitivity_analysis(sen_analy_Td_bp_cond_without_IHE, fn=fluid, kw='Td_bp_condense_without_IHE')
+        # print(sen_analy_Td_bp_cond_without_IHE)
+    except:
+        print('+' * 75)
+        print(fluid)
+        print('+' * 75)
+        pass
