@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 import numpy as np
+import pygmo as pg
 import logging
 
 
@@ -58,14 +59,12 @@ class PowerPlantWithoutIHE():
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
-
         geo_mass_flow = 200
         geo_steam_share = 0.1
         T_brine_in = 140
-        T_reinjection = 70
+#        T_reinjection = 70
 
         # ambient parameters
-
         T_amb = 5
         p_amb = 1
 
@@ -96,8 +95,6 @@ class PowerPlantWithoutIHE():
         tur = turbine('turbine')
 
         ls_valve = valve('live steam valve')
-
-        # ihe = heat_exchanger('internal heat exchanger')
 
         # busses
         power_bus = bus('power output')
@@ -169,7 +166,7 @@ class PowerPlantWithoutIHE():
                        )
                        ) / 1e3
         tur_cond.set_attr(h0=ws_stable_h0)
-        tur_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
+        tur_cond.set_attr(Td_bp=10, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
         fwp_eco.set_attr(h=ref(cond_fwp, 1, 1e3))
 
         # steam generator
@@ -207,21 +204,13 @@ class PowerPlantWithoutIHE():
         # self.nw.print_results()
         tur.set_attr(eta_s=0.9)
         feed_working_fluid_pump.set_attr(eta_s=0.75)
-        # tur_cond.set_attr(h=None)
         fwp_eco.set_attr(h=None)
-        eb_gm.set_attr(T=None)
-        tur_cond.set_attr(Td_bp=None)
-        eco_dr.set_attr(Td_bp=None)
-        
-        self.nw.connections['geosteam'].set_attr(m=20, T=140)
-        self.nw.connections['geobrine'].set_attr(m=180, T=140)
-        self.nw.connections['tur_cond'].set_attr(Td_bp=2)
-        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
+        eb_gm.set_attr(T=None)        
 
-    def calculate_efficiency(self, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Td_bp_pre):
+    def calculate_efficiency(self, T_brine_in, geo_mass_flow, geo_steam_fraction, Td_bp_cond, Td_bp_pre):
 
-        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
-        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_brine_in)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_brine_in)
 #        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.connections['tur_cond'].set_attr(Td_bp=Td_bp_cond)
         self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_pre)
@@ -249,7 +238,7 @@ class PowerPlantWithoutIHE():
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
         else:
-            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+            return self.nw.busses['power output'].P.val / 1e6 #/ self.nw.busses['thermal input'].P.val
         
     def print_result(self):
         for cp in self.nw.components.values():
@@ -337,40 +326,31 @@ class PowerPlantWithoutIHE():
         plt.savefig('ORC_Ts_plot_' + fn + '.png')
 #        plt.show()
 
-#fluids = ['R245CA'] # 'R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'
-#Td_bp_conds = np.linspace(20, 30.3, 30)
+#fluids = ['Isopentane'] # 'R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'
+#Td_bp_conds = np.linspace(20, 40, 30)
 #for fluid in fluids:
-##    try:
-#        # for some testing
-#        print('+' * 75)
-#        sen_analy_Td_bp_cond_without_IHE = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
-#        WithoutIHE = PowerPlantWithoutIHE(working_fluid=fluid)
-#        print('Working fluid:', fluid)
-#        state = CP.AbstractState('HEOS', fluid)
-#        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
-#        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
-#        for Td_bp_cond in Td_bp_conds:
-#            eff_without_IHE = WithoutIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond, -2)
-#            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'],\
-#            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency'],\
-#            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'T_i']=WithoutIHE.print_result()
-#            WithoutIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
-#        plot_sensitivity_analysis(sen_analy_Td_bp_cond_without_IHE, fn=fluid, kw='Td_bp_condense_without_IHE')
-#        
-#        print(sen_analy_Td_bp_cond_without_IHE)
-##    except:
-##        print('+' * 75)
-##        print(fluid)
-##        print('+' * 75)
-##        pass
-        
-        
-import pygmo as pg
+#    print('+' * 75)
+#    sen_analy_Td_bp_cond_without_IHE = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
+#    WithoutIHE = PowerPlantWithoutIHE(working_fluid=fluid)
+#    print('Working fluid:', fluid)
+#    state = CP.AbstractState('HEOS', fluid)
+#    T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+#    print('Critical temperature: {} °C'.format(round(T_crit, 4)))
+#    for Td_bp_cond in Td_bp_conds:
+#        eff_without_IHE = WithoutIHE.calculate_efficiency(140, 200, 0.1, Td_bp_cond, -0.01)
+#        sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'],\
+#        sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency'],\
+#        sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'T_i']=WithoutIHE.print_result()
+##        WithoutIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
+#    plot_sensitivity_analysis(sen_analy_Td_bp_cond_without_IHE, fn=fluid, kw='Td_bp_condense_without_IHE')
+#     
+#    print(sen_analy_Td_bp_cond_without_IHE)
+
 
 class optimization_problem():
 
     def fitness(self, x):
-        f1 = 1 / self.model.calculate_efficiency_opt(x)
+        f1 = 1/self.model.calculate_efficiency_opt(x)
         ci1 = -x[0] + x[1]
         print(x)
         return [f1, ci1]
@@ -389,7 +369,7 @@ class optimization_problem():
 
     def get_bounds(self):
         """Return bounds of decision variables."""
-        return ([2, -5], [30, 0])
+        return ([20, -10], [36, -0.01])
 
 optimize = optimization_problem()
 optimize.model = PowerPlantWithoutIHE(working_fluid='Isopentane')
@@ -399,36 +379,36 @@ num_gen = 15
 pop = pg.population(prob, size=10)
 algo = pg.algorithm(pg.ihs(gen=num_gen))
 
-result = {'champion': [], 'efficiency': [], 'generation': [],
-          'extraction 1': [], 'extraction 2': []}
+result = {'champion': [], 'power_output': [], 'generation': [],
+          'Td_bp before condenser': [], 'Td_bp after preheater': []}
 
 for gen in range(num_gen):
     result["generation"].append(gen)
-    result["champion"].append(100/pop.champion_f[0])
+    result["champion"].append(1 / pop.champion_f[0])
 
     decision_var = pop.get_x()
-    for pressure in decision_var:
-        result['extraction 1'].append(pressure[0])
-        result['extraction 2'].append(pressure[1])
+    for Td_bp in decision_var:
+        result['Td_bp before condenser'].append(Td_bp[0])
+        result['Td_bp after preheater'].append(Td_bp[1])
 
     fitness = pop.get_f()
-    for efficiency in fitness:
-        result['efficiency'].append(100/efficiency[0])
+    for power_output in fitness:
+        result['power_output'].append(1/power_output[0])
 
     print()
     print('Evolution: {}'.format(gen))
-    print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+    print('Power Output: {} MW'.format(round(1 / pop.champion_f[0], 4)))
     pop = algo.evolve(pop)
 
 print()
-print('Thermal Efficiency: {} %'.format(round(100 / pop.champion_f[0], 4)))
+print('Power Output: {} MW'.format(round(1 / pop.champion_f[0], 4)))
 print('Td_bp before condenser: {} °C'.format(round(pop.champion_x[0], 4)))
 print('Td_bp after preheater: {} °C'.format(round(pop.champion_x[1], 4)))
 
 # scatter plot
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter(result['extraction 2'], result['extraction 1'], linewidth=0.25,
-                 c=result['efficiency'], cmap=cm, alpha=0.5, edgecolors='black')
+sc = plt.scatter(result['Td_bp after preheater'], result['Td_bp before condenser'], linewidth=0.25,
+                 c=result['power_output'], cmap=cm, alpha=0.5, edgecolors='black')
 plt.scatter(pop.champion_x[1], pop.champion_x[0], marker='x', linewidth=1,
             c='red')
 plt.annotate('Optimum', xy=(pop.champion_x[1], pop.champion_x[0]),
@@ -438,6 +418,6 @@ plt.annotate('Optimum', xy=(pop.champion_x[1], pop.champion_x[0]),
              )
 plt.ylabel('Td_bp before condenser in °C')
 plt.xlabel('Td_bp after preheater in °C')
-plt.colorbar(sc, label='Cycle thermal efficiency (%)')
-plt.savefig("Td_bp_optimization.png")
+plt.colorbar(sc, label='Power Output: {} MW')
+plt.savefig("Td_bp_optimization_power_output.png")
 plt.show()

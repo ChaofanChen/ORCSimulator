@@ -54,7 +54,7 @@ class PowerPlant():
         geo_mass_flow = 200
         geo_steam_share = 0.1
         T_brine_in = 140
-        T_reinjection = 70
+#        T_reinjection = 70
 
         # ambient parameters
 
@@ -90,8 +90,6 @@ class PowerPlant():
         ls_valve = valve('live steam valve')
 
         ihe = heat_exchanger('internal heat exchanger')
-
-        air_cond_pump = pump('air condenser pump')
 
         # busses
         power_bus = bus('power output')
