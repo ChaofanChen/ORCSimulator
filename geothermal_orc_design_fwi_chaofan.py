@@ -698,17 +698,17 @@ class PowerPlantWithoutIHE():
 
         # turbine to condenser
         ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
-        lsv_tur = connection(ls_valve, 'out1', tur, 'in1')
+        lsv_tur = connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
         tur_cond = connection(tur, 'out1', air_cond, 'in1', label='tur_cond')
         self.nw.add_conns(ls_in, lsv_tur, tur_cond)
 
         # condenser to steam generator
-        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1')
-        fwp_eco = connection(feed_working_fluid_pump, 'out1', eco, 'in2')
+        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
+        fwp_eco = connection(feed_working_fluid_pump, 'out1', eco, 'in2', label='fwp_eco')
         self.nw.add_conns(cond_fwp, fwp_eco)
 
         # steam generator
-        eco_dr = connection(eco, 'out2', dr, 'in1')
+        eco_dr = connection(eco, 'out2', dr, 'in1', label='eco_dr')
         dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
         esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
         esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
@@ -820,8 +820,82 @@ class PowerPlantWithoutIHE():
         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
         return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
 
+    def plot_Ts(self, fn='fluid', Td_bp_cond=1):
+
+        T_before_turbine = self.nw.connections['lsv_tur'].T.val
+        s_before_turbine = PSI('S', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
+
+        T_after_turbine = self.nw.connections['tur_cond'].T.val
+        s_after_turbine = PSI('S', 'T', T_after_turbine + 273.15, 'P', self.nw.connections['tur_cond'].p.val * 1e5, self.working_fluid)
+
+        T_after_condenser = self.nw.connections['cond_fwp'].T.val
+        s_after_condenser = PSI('S', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
+
+        T_after_pump = self.nw.connections['fwp_eco'].T.val
+        s_after_pump = PSI('S', 'T', T_after_pump + 273.15, 'P', self.nw.connections['fwp_eco'].p.val * 1e5, self.working_fluid)
+
+        T_after_preheater = self.nw.connections['eco_dr'].T.val
+        s_after_preheater = PSI('S', 'T', T_after_preheater + 273.15, 'P', self.nw.connections['eco_dr'].p.val * 1e5, self.working_fluid)
+
+        state = CP.AbstractState('HEOS', self.working_fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical)
+        df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
+
+        P0 = self.nw.connections['cond_fwp'].p.val * 1e5
+        P1 = self.nw.connections['lsv_tur'].p.val * 1e5
+        T_range = np.linspace(273.15, T_crit, 1000)
+        for T in T_range:
+            df.loc[T, 's_l'] = PSI('S', 'T', T, 'Q', 0, self.working_fluid)
+            df.loc[T, 's_g'] = PSI('S', 'T', T, 'Q', 1, self.working_fluid)
+            df.loc[T, 's_iso_P0'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
+            df.loc[T, 's_iso_P1'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
+
+        T_range_evaporator = np.linspace(self.nw.connections['eco_dr'].T.val + 273.15, self.nw.connections['lsv_tur'].T.val + 273.15 + 0.1, 100)
+        for T in T_range_evaporator:
+            df.loc[T, 's_iso_P_top'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
+
+        T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
+        s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
+        T_range_condenser = np.linspace(T_steam_wf_low_P + Td_bp_cond, self.nw.connections['cond_fwp'].T.val + 273.15 - 0.1, 200)
+        for T in T_range_condenser:
+            df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
+        # print(df)
+
+        fig, ax = plt.subplots()
+        ax.plot(df['s_g'], df.index - 273.15, color='black')
+        ax.plot(df['s_l'], df.index - 273.15, color='black')
+        ax.plot(df['s_iso_P0'], df.index - 273.15, color='green')
+        ax.plot(df['s_iso_P1'], df.index - 273.15, color='green')
+        ax.plot(df['s_iso_P_top'], df.index - 273.15, color='red')
+        ax.plot(df['s_iso_P_bottom'], df.index - 273.15, color='red')
+
+        Temp = [T_before_turbine, T_after_turbine, T_steam_wf_low_P - 273.15, T_after_condenser,
+                T_after_preheater] # , T_after_pump
+        entropy = [s_before_turbine, s_after_turbine, s_steam_wf_low_P, s_after_condenser, s_after_preheater] # , s_after_pump
+        n = ['1', '2', '', '3', '4'] 
+
+        ax.scatter(entropy, Temp, color='red', s=0.5)
+        for i, txt in enumerate(n):
+            ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
+        for i in range(0, 1, 1):
+            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
+        for i in range(2, 5, 1):
+            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
+
+        # s_brine_in = PSI('S', 'T', self.nw.connections['geobrine'].T.val + 273.15, 'P',
+        #                  self.nw.connections['geobrine'].p.val, 'water')
+        # s_brine_out = PSI('S', 'T', self.nw.connections['reinjection'].T.val + 273.15, 'P',
+        #                   self.nw.connections['reinjection'].p.val * 100000, 'water')
+        # ax.scatter(s_brine_in, self.nw.connections['geobrine'].T.val)
+        # ax.scatter(s_brine_out, self.nw.connections['reinjection'].T.val)
+
+        ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [°C]')
+        ax.grid()
+        plt.savefig('ORC_Ts_plot_' + fn + '.png')
+#        plt.show()
+
 fluids = ['R245CA'] # 'R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'
-Td_bp_conds = np.linspace(1, 30.3, 16)
+Td_bp_conds = np.linspace(20, 30.3, 30)
 for fluid in fluids:
 #    try:
         # for some testing
@@ -837,7 +911,9 @@ for fluid in fluids:
             sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'],\
             sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency'],\
             sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'T_i']=WithoutIHE.print_result()
+            WithoutIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
         plot_sensitivity_analysis(sen_analy_Td_bp_cond_without_IHE, fn=fluid, kw='Td_bp_condense_without_IHE')
+        
         print(sensitivity_analysis_Q_ihe)
         print(sen_analy_Td_bp_cond_without_IHE)
 #    except:
