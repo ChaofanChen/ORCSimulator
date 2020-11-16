@@ -7,7 +7,7 @@ from tespy.components import (
 )
 from tespy.tools import logger
 
-from fluprodia import FluidPropertyDiagram
+#from fluprodia import FluidPropertyDiagram
 import CoolProp as CP
 from CoolProp.CoolProp import PropsSI as PSI
 import matplotlib.pyplot as plt
@@ -18,7 +18,6 @@ import logging
 
 
 logger.define_logging(screen_level=logging.ERROR)
-
 
 def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
     fig, ax = plt.subplots()
@@ -241,8 +240,6 @@ class PowerPlant():
         #     if isinstance(cp, heat_exchanger):
         #         if cp.Q.val > 0:
         #             return np.nan
-        # if self.nw.connections['tur_ihe'].T.val < self.nw.connections['ihe_cond'].T.val:
-        #     sys.exit()
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
@@ -289,8 +286,6 @@ class PowerPlant():
         #     if isinstance(cp, heat_exchanger):
         #         if cp.Q.val > 0:
         #             return np.nan
-        # if self.nw.connections['tur_ihe'].T.val < self.nw.connections['ihe_cond'].T.val:
-        #     sys.exit()
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
         else:
@@ -309,6 +304,31 @@ class PowerPlant():
         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
         return power / 1e6, eta_th * 100
 
+
+    def calculate_efficiency_Q_ihe(self, ttd_l_ihe):
+
+        self.nw.connections['geosteam'].set_attr(m=20, T=140)
+        self.nw.connections['geobrine'].set_attr(m=180, T=140)
+        self.nw.connections['reinjection'].set_attr(T=70)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
+        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
+        self.nw.components['main condenser'].set_attr(ttd_u=10)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
+        self.nw.components['internal heat exchanger'].set_attr(ttd_l=ttd_l_ihe)
+
+        self.nw.solve('design')
+        self.nw.print_results()
+
+        # for cp in self.nw.components.values():
+        #     if isinstance(cp, heat_exchanger):
+        #         if cp.Q.val > 0:
+        #             return np.nan
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+        
     # def plot_process(self, fn='somename'):
     #
     #     result_dict = {
@@ -427,7 +447,7 @@ class PowerPlant():
         plt.savefig('ORC_Ts_plot_' + fn + '.png')
         # plt.show()
 
-# ---------------------------------------------------------------------------------------------------------------------
+#%% -----different working fluids at the same design logic (comparative study)-----------------------------
 # fluids = ['R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'] # Isobutane
 # sensitivity_analysis_working_fluid = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 # for fluid in fluids:
@@ -443,61 +463,71 @@ class PowerPlant():
 #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
 # plot_sensitivity_analysis(sensitivity_analysis_working_fluid, fn='', kw='Working fluid')
 
-# ---------------------------------------------------------------------------------------------------------------------
-# fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] #, 'Isobutane',
-# Td_bp_conds = np.linspace(1, 34, 17)
-# # Td_bp_ecos = np.linspace(-8, -1, 9)
-# T_pinch_conds = np.linspace(15, 1, 5)
-# T_pinch_phs = np.linspace(15, 1, 5)
-# for fluid in fluids:
-#     try:
-#         print('+' * 75)
-#         sensitivity_analysis_Td_bp_eco = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-#         sensitivity_analysis_Td_bp_cond = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-#         sensitivity_analysis_T_pinch_cond = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-#         sensitivity_analysis_T_pinch_ph = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
-#         PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
-#         print('Working fluid:', fluid)
-#         state = CP.AbstractState('HEOS', fluid)
-#         T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
-#         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
-#
-#         # for Td_bp_eco in Td_bp_ecos:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 2, Td_bp_eco, 10, 10)
-#         #     # PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
-#         #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'power_output'], \
-#         #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
-#         # plot_sensitivity_analysis(sensitivity_analysis_Td_bp_eco, fn=fluid, kw='Td_bp_preheater')
-#
-#         # for T_pinch_cond in T_pinch_conds:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, T_pinch_cond, 10)
-#         #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
-#         #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'power_output'], \
-#         #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
-#         # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_cond, fn=fluid, kw='T_pinch_cond')
-#
-#         # for T_pinch_ph in T_pinch_phs:
-#         #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, 10, T_pinch_ph)
-#         #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
-#         #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'power_output'], \
-#         #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
-#         # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_ph, fn=fluid, kw='T_pinch_ph')
-#
-#         for Td_bp_cond in Td_bp_conds:
-#             eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, Td_bp_cond, -2, 10, 10)
-#             PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
-#             sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'power_output'], \
-#             sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
-#         sensitivity_analysis_Td_bp_cond = sensitivity_analysis_Td_bp_cond[(sensitivity_analysis_Td_bp_cond.T != 0).any()]
-#         plot_sensitivity_analysis(sensitivity_analysis_Td_bp_cond, fn=fluid, kw='Td_bp_condense')
-#
-#     except:
-#         print('+' * 75)
-#         print(fluid)
-#         print('+' * 75)
-#         pass
+#%% --------sensitivity analysis for every single parameter--------------------------
+fluids = ['R245CA'] #, 'Isobutane','R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'
+Td_bp_conds = np.linspace(1, 30, 16)
+# Td_bp_ecos = np.linspace(-8, -1, 9)
+T_pinch_conds = np.linspace(15, 1, 5)
+T_pinch_phs = np.linspace(15, 1, 5)
+for fluid in fluids:
+    # try:
+        print('+' * 75)
+        sensitivity_analysis_Td_bp_eco = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        sensitivity_analysis_Td_bp_cond = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        sensitivity_analysis_T_pinch_cond = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        sensitivity_analysis_T_pinch_ph = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        PowerPlantWithIHE = PowerPlant(working_fluid=fluid)
+        print('Working fluid:', fluid)
+        state = CP.AbstractState('HEOS', fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
+        print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 
-# ---------------------------------------------------------------------------------------------------------------------
+        # for Td_bp_eco in Td_bp_ecos:
+        #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 2, Td_bp_eco, 10, 10)
+        #     # PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
+        #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'power_output'], \
+        #     sensitivity_analysis_Td_bp_eco.loc[Td_bp_eco, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+        # plot_sensitivity_analysis(sensitivity_analysis_Td_bp_eco, fn=fluid, kw='Td_bp_preheater')
+
+        # for T_pinch_cond in T_pinch_conds:
+        #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, T_pinch_cond, 10)
+        #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
+        #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'power_output'], \
+        #     sensitivity_analysis_T_pinch_cond.loc[T_pinch_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+        # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_cond, fn=fluid, kw='T_pinch_cond')
+
+        # for T_pinch_ph in T_pinch_phs:
+        #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, 4, -2, 10, T_pinch_ph)
+        #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=2)
+        #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'power_output'], \
+        #     sensitivity_analysis_T_pinch_ph.loc[T_pinch_ph, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+        # plot_sensitivity_analysis(sensitivity_analysis_T_pinch_ph, fn=fluid, kw='T_pinch_ph')
+
+# ----------------------------------------------------------------------------------------------------------------------
+        sensitivity_analysis_Q_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        ihe_ttd_ls = np.linspace(0, 26.45, 10)
+        for ihe_ttd_l in ihe_ttd_ls:
+            eff = PowerPlantWithIHE.calculate_efficiency_Q_ihe(ihe_ttd_l)
+            sensitivity_analysis_Q_ihe.loc[ihe_ttd_l, 'power_output'], \
+            sensitivity_analysis_Q_ihe.loc[ihe_ttd_l, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+        plot_sensitivity_analysis(sensitivity_analysis_Q_ihe, fn=fluid, kw='ihe_ttd_l')
+# ----------------------------------------------------------------------------------------------------------------------
+
+        # for Td_bp_cond in Td_bp_conds:
+        #     eff = PowerPlantWithIHE.calculate_efficiency(140, 200, 0.1, 70, Td_bp_cond, -2, 10, 10)
+        #     PowerPlantWithIHE.plot_Ts(fn=fluid, Td_bp_cond=Td_bp_cond)
+        #     sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'power_output'], \
+        #     sensitivity_analysis_Td_bp_cond.loc[Td_bp_cond, 'thermal_efficiency']=PowerPlantWithIHE.print_result()
+        # sensitivity_analysis_Td_bp_cond = sensitivity_analysis_Td_bp_cond[(sensitivity_analysis_Td_bp_cond.T != 0).any()]
+        # plot_sensitivity_analysis(sensitivity_analysis_Td_bp_cond, fn=fluid, kw='Td_bp_condense')
+
+    # except:
+    #     print('+' * 75)
+    #     print(fluid)
+    #     print('+' * 75)
+    #     pass
+
+#%% -----------parametric optimization for every working fluid-------------------------------------------
 # import pygmo as pg
 #
 # class optimization_problem():
@@ -575,7 +605,7 @@ class PowerPlant():
 # plt.savefig("Td_bp_optimization.png")
 # plt.show()
 
-# ---------------------------------------------------------------------------------------------------------------------
+#%% ------------off-design performance analysis----------------------------------------------------------
 # off_design_performance_f = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 # off_design_performance_T_pro = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
 #
@@ -599,7 +629,7 @@ class PowerPlant():
 
 
 
-# ---------------------------------------------------------------------------------------------------------------------
+#%% -------------------------Influence of the internal heat exchanger---------------------------------------------------------
 class PowerPlantWithoutIHE():
 
     def __init__(self, working_fluid):
@@ -768,7 +798,7 @@ class PowerPlantWithoutIHE():
 
         self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction)
         self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction))
-        # self.nw.connections['reinjection'].set_attr(T=T_reinjection)
+#        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
         self.nw.connections['tur_cond'].set_attr(Td_bp=Td_bp_cond)
         self.nw.solve('design')
         self.nw.print_results()
@@ -788,15 +818,15 @@ class PowerPlantWithoutIHE():
         power = self.nw.busses['power output'].P.val
         print('Power output: {} MW'.format(round(power / 1e6, 4)))
         print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
-        return power / 1e6, eta_th * 100
+        return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
 
 fluids = ['R245CA'] # 'R600', 'R245fa', 'R245CA', 'R11', 'Isopentane', 'n-Pentane', 'R123', 'R141B', 'R113'
-Td_bp_conds = np.linspace(1, 30, 16)
+Td_bp_conds = np.linspace(1, 30.3, 16)
 for fluid in fluids:
-    try:
+#    try:
         # for some testing
         print('+' * 75)
-        sen_analy_Td_bp_cond_without_IHE = pd.DataFrame(columns=['power_output', 'thermal_efficiency'])
+        sen_analy_Td_bp_cond_without_IHE = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
         WithoutIHE = PowerPlantWithoutIHE(working_fluid=fluid)
         print('Working fluid:', fluid)
         state = CP.AbstractState('HEOS', fluid)
@@ -804,12 +834,14 @@ for fluid in fluids:
         print('Critical temperature: {} °C'.format(round(T_crit, 4)))
         for Td_bp_cond in Td_bp_conds:
             eff_without_IHE = WithoutIHE.calculate_efficiency(200, 0.1, 70, Td_bp_cond)
-            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'], \
-            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency']=WithoutIHE.print_result()
+            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'power_output'],\
+            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'thermal_efficiency'],\
+            sen_analy_Td_bp_cond_without_IHE.loc[Td_bp_cond, 'T_i']=WithoutIHE.print_result()
         plot_sensitivity_analysis(sen_analy_Td_bp_cond_without_IHE, fn=fluid, kw='Td_bp_condense_without_IHE')
-        # print(sen_analy_Td_bp_cond_without_IHE)
-    except:
-        print('+' * 75)
-        print(fluid)
-        print('+' * 75)
-        pass
+        print(sensitivity_analysis_Q_ihe)
+        print(sen_analy_Td_bp_cond_without_IHE)
+#    except:
+#        print('+' * 75)
+#        print(fluid)
+#        print('+' * 75)
+#        pass
