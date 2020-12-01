@@ -12,16 +12,16 @@ import matplotlib.pyplot as plt
 fluids = ['R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'] #, 'Isobutane',
 
 for fluid in fluids:
-    df = pd.read_csv('diff_Td_bp_cond_' + fluid + '_without_ihe.csv', 
-                         header=0, names=['Td_bp', 'power_output','thermal_efficiency', 'T_i'])
+    df = pd.read_csv('diff_p_before_tur_' + fluid + '_without_ihe.csv', 
+                         header=0, names=['p_before_tur', 'power_output','thermal_efficiency', 'T_i'])
     fig, ax = plt.subplots()
-    ax.plot(df['Td_bp'], df['power_output'], color='blue', marker="o")
-    ax.set(xlabel= 'Td_bp before condenser with ' + fluid + ' [°C]', ylabel='Net power output [MW]')
+    ax.plot(df['p_before_tur'], df['power_output'], color='blue', marker="o")
+    ax.set(xlabel= 'Pressure before turbine with ' + fluid + ' [bar]', ylabel='Net power output [MW]')
 #    plt.ylim(14, 19)
     ax2=ax.twinx()
-    ax2.plot(df['Td_bp'], df['T_i'], color='red', marker="*")
+    ax2.plot(df['p_before_tur'], df['T_i'], color='red', marker="*")
     ax2.set(ylabel='Re-injection temperature [°C]')
-    plt.ylim(45, 100)
+    plt.ylim(50, 95)
     ax.yaxis.label.set_color('blue')
     ax.yaxis.label.set_size(15)
     ax.xaxis.label.set_size(15)
@@ -33,5 +33,5 @@ for fluid in fluids:
     ax.grid()
 #    plt.show()
     # fig.autofmt_xdate()
-    plt.savefig('diff_Td_bp_plot_' + fluid + '.pdf')
+    plt.savefig('diff_p_before_tur_' + fluid + '.pdf')
 #    print(df)

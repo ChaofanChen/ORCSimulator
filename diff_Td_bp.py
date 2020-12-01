@@ -11,7 +11,7 @@ import numpy as np
 import geothermal_orc_design_fwi_chaofan 
 
 # --------sensitivity analysis for every single parameter--------------------------
-fluids = ['R600'] #, 'Isobutane','R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'
+fluids = ['R11'] #, 'Isobutane','R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'
 Td_bp_conds = np.linspace(1, 30, 16)
 # Td_bp_ecos = np.linspace(-8, -1, 9)
 T_pinch_conds = np.linspace(15, 1, 5)
@@ -25,13 +25,13 @@ for fluid in fluids:
     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 
     sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
-    Td_bp_conds = np.linspace(13, 19.99, 30)
-    for Td_bp_cond in Td_bp_conds:
-        eff = PowerPlantWithIHE.calculate_efficiency_without_ihe(Td_bp_cond)
-        sensitivity_analysis_without_ihe.loc[Td_bp_cond, 'power_output'], \
-        sensitivity_analysis_without_ihe.loc[Td_bp_cond, 'thermal_efficiency'],\
-        sensitivity_analysis_without_ihe.loc[Td_bp_cond, 'T_i']=PowerPlantWithIHE.print_result()
+    p_before_turs = np.linspace(8, 12, 20)
+    for p_before_tur in p_before_turs:
+        eff = PowerPlantWithIHE.calculate_efficiency_without_ihe(p_before_tur)
+        sensitivity_analysis_without_ihe.loc[p_before_tur, 'power_output'], \
+        sensitivity_analysis_without_ihe.loc[p_before_tur, 'thermal_efficiency'],\
+        sensitivity_analysis_without_ihe.loc[p_before_tur, 'T_i']=PowerPlantWithIHE.print_result()
     print(sensitivity_analysis_without_ihe)
-    sensitivity_analysis_without_ihe.to_csv('diff_Td_bp_cond_' + fluid + '_without_ihe.csv')
+    sensitivity_analysis_without_ihe.to_csv('diff_p_before_tur_' + fluid + '_without_ihe.csv')
     geothermal_orc_design_fwi_chaofan.plot_sensitivity_analysis(sensitivity_analysis_without_ihe, 
                                                                 fn=fluid, kw='without_ihe')

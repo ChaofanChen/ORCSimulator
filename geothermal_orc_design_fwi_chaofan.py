@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 import numpy as np
+import math
 import logging
 
 
@@ -22,7 +23,7 @@ logger.define_logging(screen_level=logging.ERROR)
 def plot_sensitivity_analysis(sensitivity_analysis, fn='fluid', kw='Td_bp'):
     fig, ax = plt.subplots()
     ax.plot(sensitivity_analysis.index, sensitivity_analysis['power_output'], color='blue', marker="o")
-    ax.set(xlabel=kw +' [°C]', ylabel='Net power output [MW]')
+    ax.set(xlabel=kw, ylabel='Net power output [MW]')
     ax2=ax.twinx()
     ax2.plot(sensitivity_analysis.index, sensitivity_analysis['thermal_efficiency'], color='red', marker="*")
     ax2.set(ylabel='Thermal efficiency [%]')
@@ -206,31 +207,8 @@ class PowerPlant():
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
 
-    def calculate_efficiency(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection, Td_bp_cond, Q_ihe, ttd_u_cond, ttd_l_evap):
-
-        self.nw.components['internal heat exchanger'].set_attr(Q=Q_ihe)
-        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
-        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
-#        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=Td_bp_cond)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_eco)
-        self.nw.components['main condenser'].set_attr(ttd_u=ttd_u_cond)
-        self.nw.components['brine evaporator'].set_attr(ttd_l=ttd_l_evap)
-
-        self.nw.solve('design')
-        self.nw.print_results()
-
-        for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0:
-                    return np.nan
-
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
-            return np.nan
-        else:
-            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-
-    def calculate_efficiency_opt(self, x, working_fluid):
+    
+    def calculate_efficiency_opt_without_ihe(self, x, working_fluid):
 
         self.working_fluid = working_fluid
         fluids = ['water', self.working_fluid, 'air']
@@ -396,16 +374,17 @@ class PowerPlant():
         
         self.nw.components['internal heat exchanger'].set_attr(Q=0)
 #        print(x[0], x[1])
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=x[0])
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
 #        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
+        self.nw.connections['lsv_tur'].set_attr(p=x[0])
 
         self.nw.solve('design')
 #        self.nw.print_results()
 
-        for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0:
-                    return np.nan
+#        for cp in self.nw.components.values():
+#            if isinstance(cp, heat_exchanger):
+#                if cp.Q.val > 0:
+#                    return np.nan
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
@@ -439,25 +418,12 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
-    def print_result(self):
+    def calculate_efficiency_without_ihe(self, p_before_tur):
 
-        for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0:
-                    return 0, 0, 0
-
-        eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-        power = self.nw.busses['power output'].P.val
-        print('Power output: {} MW'.format(round(power / 1e6, 4)))
-        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
-        return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
-
-
-    def calculate_efficiency_without_ihe(self, Td_bp_cond):
-
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=Td_bp_cond)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
 #        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
         self.nw.components['internal heat exchanger'].set_attr(Q=0)
+        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
 
         self.nw.solve('design')
         self.nw.print_results()
@@ -472,125 +438,6 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
-    def plot_Ts(self, fn='fluid', Td_bp_cond=1):
-
-        T_before_turbine = self.nw.connections['lsv_tur'].T.val
-        s_before_turbine = PSI('S', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
-
-        T_after_turbine = self.nw.connections['tur_ihe'].T.val
-        s_after_turbine = PSI('S', 'T', T_after_turbine + 273.15, 'P', self.nw.connections['tur_ihe'].p.val * 1e5, self.working_fluid)
-
-        T_before_condenser = self.nw.connections['ihe_cond'].T.val
-        s_before_condenser = PSI('S', 'T', T_before_condenser + 273.15, 'P', self.nw.connections['ihe_cond'].p.val * 1e5, self.working_fluid)
-
-        T_after_condenser = self.nw.connections['cond_fwp'].T.val
-        s_after_condenser = PSI('S', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
-
-        T_after_pump = self.nw.connections['fwp_ihe'].T.val
-        s_after_pump = PSI('S', 'T', T_after_pump + 273.15, 'P', self.nw.connections['fwp_ihe'].p.val * 1e5, self.working_fluid)
-
-        T_after_ihe = self.nw.connections['ihe_eco'].T.val
-        s_after_ihe = PSI('S', 'T', T_after_ihe + 273.15, 'P', self.nw.connections['ihe_eco'].p.val * 1e5, self.working_fluid)
-
-        T_after_preheater = self.nw.connections['eco_dr'].T.val
-        s_after_preheater = PSI('S', 'T', T_after_preheater + 273.15, 'Q', 0, self.working_fluid)
-
-        state = CP.AbstractState('HEOS', self.working_fluid)
-        T_crit = state.trivial_keyed_output(CP.iT_critical)
-        df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
-
-        P0 = PSI('P', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
-        P1 = PSI('P', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
-        T_range = np.linspace(273.15, T_crit, 1000)
-        for T in T_range:
-            df.loc[T, 's_l'] = PSI('S', 'T', T, 'Q', 0, self.working_fluid)
-            df.loc[T, 's_g'] = PSI('S', 'T', T, 'Q', 1, self.working_fluid)
-            df.loc[T, 's_iso_P0'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
-            df.loc[T, 's_iso_P1'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
-
-        T_range_evaporator = np.linspace(T_after_preheater + 273.15 - 0.5, T_before_turbine + 273.15 + 0.5, 100)
-        for T in T_range_evaporator:
-            df.loc[T, 's_iso_P_top'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
-
-        T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
-        s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
-        T_range_condenser = np.linspace(T_steam_wf_low_P + Td_bp_cond, T_after_condenser + 273.15 - 0.1, 200)
-        for T in T_range_condenser:
-            df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
-        # print(df)
-
-        fig, ax = plt.subplots()
-        ax.plot(df['s_g'], df.index - 273.15, color='black')
-        ax.plot(df['s_l'], df.index - 273.15, color='black')
-        ax.plot(df['s_iso_P0'], df.index - 273.15, color='green')
-        ax.plot(df['s_iso_P1'], df.index - 273.15, color='green')
-        ax.plot(df['s_iso_P_top'], df.index - 273.15, color='red')
-        ax.plot(df['s_iso_P_bottom'], df.index - 273.15, color='red')
-
-        Temp = [T_before_turbine, T_after_turbine, T_before_condenser, T_steam_wf_low_P - 273.15, T_after_condenser,
-                T_after_ihe, T_after_preheater] # , T_after_pump
-        entropy = [s_before_turbine, s_after_turbine, s_before_condenser, s_steam_wf_low_P, s_after_condenser, s_after_ihe,
-                   s_after_preheater] # , s_after_pump
-        n = ['1', '2', '3', ' ', '4', '5', '6'] # , '7'
-
-        ax.scatter(entropy, Temp, color='red', s=0.5)
-        for i, txt in enumerate(n):
-            ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
-        for i in range(0, 2, 1):
-            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
-        for i in range(4, 6, 1):
-            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
-
-        # s_brine_in = PSI('S', 'T', self.nw.connections['geobrine'].T.val + 273.15, 'P',
-        #                  self.nw.connections['geobrine'].p.val, 'water')
-        # s_brine_out = PSI('S', 'T', self.nw.connections['reinjection'].T.val + 273.15, 'P',
-        #                   self.nw.connections['reinjection'].p.val * 100000, 'water')
-        # ax.scatter(s_brine_in, self.nw.connections['geobrine'].T.val)
-        # ax.scatter(s_brine_out, self.nw.connections['reinjection'].T.val)
-
-        ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [°C]')
-        ax.grid()
-        plt.savefig('ORC_Ts_plot_' + fn + '.png')
-        # plt.show()
-
-        
-    # def plot_process(self, fn='somename'):
-    #
-    #     result_dict = {
-    #         prop: [
-    #             conn.get_attr(prop).val for conn in self.nw.conns.index
-    #             if conn.fluid.val[self.working_fluid] == 1
-    #         ] for prop in ['p', 'h', 's', 'T']
-    #     }
-    #
-    #     self.diagram.set_limits(
-    #         x_min=min(result_dict['h']) - 50,
-    #         x_max=max(result_dict['h']) + 50,
-    #         y_min=min(result_dict['p']) / 2,
-    #         y_max=max(result_dict['p']) * 10
-    #     )
-    #     self.diagram.draw_isolines('logph')
-    #     self.diagram.ax.scatter(result_dict['h'], result_dict['p'], zorder=100)
-    #     self.diagram.save(fn + '_logph.pdf')
-    #
-    #     self.diagram.set_limits(
-    #         x_min=min(result_dict['s']) - 50,
-    #         x_max=max(result_dict['s']) + 50,
-    #         y_min=min(result_dict['T']) - 25,
-    #         y_max=PSI('T_critical', self.working_fluid) + 25 - 273.15
-    #     )
-    #     self.diagram.draw_isolines('Ts')
-    #     self.diagram.ax.scatter(result_dict['s'], result_dict['T'], zorder=100)
-    #     self.diagram.save(fn + '_Ts.pdf')
-    #
-    # def generate_diagram(self):
-    #
-    #     self.diagram = FluidPropertyDiagram(self.working_fluid)
-    #     self.diagram.set_unit_system(T='°C', p='bar', h='kJ/kg')
-    #     iso_T = np.arange(0, 201, 25)
-    #     self.diagram.set_isolines(T=iso_T)
-    #     self.diagram.calc_isolines()
-    
     def calculate_efficiency_opt_with_ihe(self, x, working_fluid):
 
         self.working_fluid = working_fluid
@@ -755,8 +602,9 @@ class PowerPlant():
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
         
-        self.nw.components['internal heat exchanger'].set_attr(Q=x[1])
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=x[0])
+        self.nw.connections['lsv_tur'].set_attr(p=x[0])
+        self.nw.components['internal heat exchanger'].set_attr(Q=x[1]*1e6)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
 #        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
 
         self.nw.solve('design')
@@ -771,3 +619,163 @@ class PowerPlant():
             return np.nan
         else:
             return self.nw.busses['power output'].P.val / 1e6 #/ self.nw.busses['thermal input'].P.val
+
+    def calculate_efficiency_with_ihe(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection, P_tur, Q_ihe, ttd_u_cond, ttd_l_evap):
+
+        self.nw.components['internal heat exchanger'].set_attr(ttd_l=Q_ihe)#
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
+#        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
+#        self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_eco)
+        self.nw.components['main condenser'].set_attr(ttd_u=ttd_u_cond)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=ttd_l_evap)
+        self.nw.connections['lsv_tur'].set_attr(p=P_tur)
+
+        self.nw.solve('design')
+        self.nw.print_results()
+
+        for cp in self.nw.components.values():
+            if isinstance(cp, heat_exchanger):
+                if cp.Q.val > 0:
+                    return np.nan
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
+    
+    def print_result(self):
+
+        for cp in self.nw.components.values():
+            if isinstance(cp, heat_exchanger):
+                if cp.Q.val > 0:                 # or math.isnan(cp.kA.val)
+                    return 0, 0, 0
+
+        eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+        power = self.nw.busses['power output'].P.val
+        print('Power output: {} MW'.format(round(power / 1e6, 4)))
+        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
+        return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
+    
+    def plot_Ts(self, fn='fluid', Td_bp_cond=1):
+
+        T_before_turbine = self.nw.connections['lsv_tur'].T.val
+        s_before_turbine = PSI('S', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
+
+        T_after_turbine = self.nw.connections['tur_ihe'].T.val
+        s_after_turbine = PSI('S', 'T', T_after_turbine + 273.15, 'P', self.nw.connections['tur_ihe'].p.val * 1e5, self.working_fluid)
+
+        T_before_condenser = self.nw.connections['ihe_cond'].T.val
+        s_before_condenser = PSI('S', 'T', T_before_condenser + 273.15, 'P', self.nw.connections['ihe_cond'].p.val * 1e5, self.working_fluid)
+
+        T_after_condenser = self.nw.connections['cond_fwp'].T.val
+        s_after_condenser = PSI('S', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
+
+        T_after_pump = self.nw.connections['fwp_ihe'].T.val
+        s_after_pump = PSI('S', 'T', T_after_pump + 273.15, 'P', self.nw.connections['fwp_ihe'].p.val * 1e5, self.working_fluid)
+
+        T_after_ihe = self.nw.connections['ihe_eco'].T.val
+        s_after_ihe = PSI('S', 'T', T_after_ihe + 273.15, 'P', self.nw.connections['ihe_eco'].p.val * 1e5, self.working_fluid)
+
+        T_after_preheater = self.nw.connections['eco_dr'].T.val
+        s_after_preheater = PSI('S', 'T', T_after_preheater + 273.15, 'Q', 0, self.working_fluid)
+
+        state = CP.AbstractState('HEOS', self.working_fluid)
+        T_crit = state.trivial_keyed_output(CP.iT_critical)
+        df = pd.DataFrame(columns=['s_l', 's_g', 's_iso_P0', 's_iso_P1', 's_iso_P_top', 's_iso_P_bottom'])
+
+        P0 = PSI('P', 'T', T_after_condenser + 273.15, 'Q', 0, self.working_fluid)
+        P1 = PSI('P', 'T', T_before_turbine + 273.15, 'Q', 1, self.working_fluid)
+        T_range = np.linspace(273.15, T_crit, 1000)
+        for T in T_range:
+            df.loc[T, 's_l'] = PSI('S', 'T', T, 'Q', 0, self.working_fluid)
+            df.loc[T, 's_g'] = PSI('S', 'T', T, 'Q', 1, self.working_fluid)
+            df.loc[T, 's_iso_P0'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
+            df.loc[T, 's_iso_P1'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
+
+        T_range_evaporator = np.linspace(T_after_preheater + 273.15 - 0.5, T_before_turbine + 273.15 + 0.5, 100)
+        for T in T_range_evaporator:
+            df.loc[T, 's_iso_P_top'] = PSI('S', 'T', T, 'P', P1, self.working_fluid)
+
+        T_steam_wf_low_P = PSI('T', 'P', P0, 'Q', 1, self.working_fluid)
+        s_steam_wf_low_P = PSI('S', 'P', P0, 'Q', 1, self.working_fluid)
+        T_range_condenser = np.linspace(T_steam_wf_low_P + Td_bp_cond, T_after_condenser + 273.15 - 0.1, 200)
+        for T in T_range_condenser:
+            df.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, self.working_fluid)
+        # print(df)
+
+        fig, ax = plt.subplots()
+        ax.plot(df['s_g'], df.index - 273.15, color='black')
+        ax.plot(df['s_l'], df.index - 273.15, color='black')
+        ax.plot(df['s_iso_P0'], df.index - 273.15, color='green')
+        ax.plot(df['s_iso_P1'], df.index - 273.15, color='green')
+        ax.plot(df['s_iso_P_top'], df.index - 273.15, color='red')
+        ax.plot(df['s_iso_P_bottom'], df.index - 273.15, color='red')
+
+        Temp = [T_before_turbine, T_after_turbine, T_before_condenser, T_steam_wf_low_P - 273.15, T_after_condenser,
+                T_after_ihe, T_after_preheater] # , T_after_pump
+        entropy = [s_before_turbine, s_after_turbine, s_before_condenser, s_steam_wf_low_P, s_after_condenser, s_after_ihe,
+                   s_after_preheater] # , s_after_pump
+        n = ['1', '2', '3', ' ', '4', '5', '6'] # , '7'
+
+        ax.scatter(entropy, Temp, color='red', s=0.5)
+        for i, txt in enumerate(n):
+            ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
+        for i in range(0, 2, 1):
+            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
+        for i in range(4, 6, 1):
+            plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
+
+        # s_brine_in = PSI('S', 'T', self.nw.connections['geobrine'].T.val + 273.15, 'P',
+        #                  self.nw.connections['geobrine'].p.val, 'water')
+        # s_brine_out = PSI('S', 'T', self.nw.connections['reinjection'].T.val + 273.15, 'P',
+        #                   self.nw.connections['reinjection'].p.val * 100000, 'water')
+        # ax.scatter(s_brine_in, self.nw.connections['geobrine'].T.val)
+        # ax.scatter(s_brine_out, self.nw.connections['reinjection'].T.val)
+
+        ax.set(xlabel='Specific entropy [J/kg K]', ylabel='Temperature [°C]')
+        ax.grid()
+        plt.savefig('ORC_Ts_plot_' + fn + '.png')
+        # plt.show()
+
+        
+    # def plot_process(self, fn='somename'):
+    #
+    #     result_dict = {
+    #         prop: [
+    #             conn.get_attr(prop).val for conn in self.nw.conns.index
+    #             if conn.fluid.val[self.working_fluid] == 1
+    #         ] for prop in ['p', 'h', 's', 'T']
+    #     }
+    #
+    #     self.diagram.set_limits(
+    #         x_min=min(result_dict['h']) - 50,
+    #         x_max=max(result_dict['h']) + 50,
+    #         y_min=min(result_dict['p']) / 2,
+    #         y_max=max(result_dict['p']) * 10
+    #     )
+    #     self.diagram.draw_isolines('logph')
+    #     self.diagram.ax.scatter(result_dict['h'], result_dict['p'], zorder=100)
+    #     self.diagram.save(fn + '_logph.pdf')
+    #
+    #     self.diagram.set_limits(
+    #         x_min=min(result_dict['s']) - 50,
+    #         x_max=max(result_dict['s']) + 50,
+    #         y_min=min(result_dict['T']) - 25,
+    #         y_max=PSI('T_critical', self.working_fluid) + 25 - 273.15
+    #     )
+    #     self.diagram.draw_isolines('Ts')
+    #     self.diagram.ax.scatter(result_dict['s'], result_dict['T'], zorder=100)
+    #     self.diagram.save(fn + '_Ts.pdf')
+    #
+    # def generate_diagram(self):
+    #
+    #     self.diagram = FluidPropertyDiagram(self.working_fluid)
+    #     self.diagram.set_unit_system(T='°C', p='bar', h='kJ/kg')
+    #     iso_T = np.arange(0, 201, 25)
+    #     self.diagram.set_isolines(T=iso_T)
+    #     self.diagram.calc_isolines()
+    
+    

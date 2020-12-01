@@ -14,7 +14,7 @@ import pygmo as pg
 class optimization_problem():
 
     def fitness(self, x):
-        f1 = 1 / self.model.calculate_efficiency_opt(x, working_fluid='R11')
+        f1 = 1 / self.model.calculate_efficiency_opt_without_ihe(x, working_fluid='R245CA')
         ci1 = -x[0] + x[1]
         print(x)
         return [f1, ci1]
@@ -33,10 +33,10 @@ class optimization_problem():
 
     def get_bounds(self):
         """Return bounds of decision variables."""
-        return ([3, -0.01], [5, -0.01])
+        return ([12, -0.01], [16, -0.01])
 
 optimize = optimization_problem()
-optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R11')
+optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R245CA')
 prob = pg.problem(optimize)
 num_gen = 15
 
@@ -44,7 +44,7 @@ pop = pg.population(prob, size=10)
 algo = pg.algorithm(pg.ihs(gen=num_gen))
 
 result = {'champion': [], 'power_output': [], 'generation': [],
-          'Td_bp before condenser': [], 'Td_bp after preheater': []}
+          'Pressure before turbine': [], 'Td_bp after preheater': []}
 
 for gen in range(num_gen):
     result["generation"].append(gen)
@@ -52,7 +52,7 @@ for gen in range(num_gen):
 
     decision_var = pop.get_x()
     for Td_bp in decision_var:
-        result['Td_bp before condenser'].append(Td_bp[0])
+        result['Pressure before turbine'].append(Td_bp[0])
         result['Td_bp after preheater'].append(Td_bp[1])
 
     fitness = pop.get_f()
@@ -66,12 +66,12 @@ for gen in range(num_gen):
 
 print()
 print('Power Output: {} MW'.format(round(1 / pop.champion_f[0], 4)))
-print('Td_bp before condenser: {} °C'.format(round(pop.champion_x[0], 4)))
+print('Pressure before turbine: {} °C'.format(round(pop.champion_x[0], 4)))
 print('Td_bp after preheater: {} °C'.format(round(pop.champion_x[1], 4)))
 
 # scatter plot
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter(result['Td_bp after preheater'], result['Td_bp before condenser'], linewidth=0.25,
+sc = plt.scatter(result['Td_bp after preheater'], result['Pressure before turbine'], linewidth=0.25,
                  c=result['power_output'], cmap=cm, alpha=0.5, edgecolors='black')
 plt.scatter(pop.champion_x[1], pop.champion_x[0], marker='x', linewidth=1,
             c='red')
@@ -80,8 +80,8 @@ plt.annotate('Optimum', xy=(pop.champion_x[1], pop.champion_x[0]),
              arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.5',
                              color='red')
              )
-plt.ylabel('Td_bp before condenser [°C]')
+plt.ylabel('Pressure before turbine [bar]')
 plt.xlabel('Td_bp after preheater [°C]')
 plt.colorbar(sc, label='Power Output [MW]')
-plt.savefig("Td_bp_optimization_power_output.png")
+plt.savefig("p_tur_optimization_power_output.png")
 plt.show()
