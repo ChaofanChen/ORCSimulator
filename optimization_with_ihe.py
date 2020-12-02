@@ -15,7 +15,7 @@ import pygmo as pg
 class optimization_problem():
 
     def fitness(self, x):
-        f1 = 1 / self.model.calculate_efficiency_opt_with_ihe(x, working_fluid='R245CA')
+        f1 = 1 / self.model.calculate_efficiency_opt_with_ihe(x, working_fluid='R600')
         ci1 = -x[0] + x[1]
         print(x)
         return [f1, ci1]
@@ -37,7 +37,7 @@ class optimization_problem():
         return ([12, -10], [16, -7])
 
 optimize = optimization_problem()
-optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R245CA')
+optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R600')
 prob = pg.problem(optimize)
 num_gen = 15
 
