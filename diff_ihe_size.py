@@ -20,7 +20,7 @@ for fluid in fluids:
     T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
     PowerPlantWithIHE = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid=fluid)
-    p_turs = np.linspace(13, 23.2, 10)
+    p_turs = np.linspace(-4.5e6, -3.5e6, 10)
     for p_tur in p_turs:      
         eff = PowerPlantWithIHE.calculate_efficiency_with_ihe(p_tur)
         sensitivity_analysis_Q_ihe.loc[p_tur, 'power_output'], \

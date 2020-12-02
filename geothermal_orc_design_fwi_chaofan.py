@@ -172,8 +172,8 @@ class PowerPlant():
         gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), T=T_brine_in, x=0)
 
         em_dr.set_attr()
-        eb_em.set_attr(x=0.4)
-        es_em.set_attr(x=0.6, design=['x'])
+        eb_em.set_attr(x=0.5, label = 'eb_em')
+        es_em.set_attr(x=0.5, design=['x'], label = 'es_em')
         eb_gm.set_attr(T=T_brine_in - 20)
 
 #        eco_dr.set_attr(Td_bp=-2)
@@ -230,11 +230,12 @@ class PowerPlant():
     def calculate_efficiency_with_ihe(self, p_before_tur):
 
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
-#        self.nw.components['internal heat exchanger'].set_attr(ttd_l=8)
-        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
+        self.nw.components['internal heat exchanger'].set_attr(Q=p_before_tur)
+        self.nw.connections['lsv_tur'].set_attr(p=24.999)
         self.nw.connections['reinjection'].set_attr(T=70)
-#        self.nw.components['brine evaporator'].set_attr(ttd_l=None)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=None)
+#        self.nw.connections['eb_em'].set_attr(x=0.1)
+#        self.nw.connections['es_em'].set_attr(x=0.1)
 
         self.nw.solve('design')
         self.nw.print_results()
@@ -626,14 +627,15 @@ class PowerPlant():
         self.nw.connections['lsv_tur'].set_attr(p=x[0])
         self.nw.components['internal heat exchanger'].set_attr(Q=x[1]*1e6)
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
+        self.nw.connections['reinjection'].set_attr(T=70)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=None)
 
         self.nw.solve('design')
 #        self.nw.print_results()
 
         for cp in self.nw.components.values():
             if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0 or math.isnan(cp.ttd_l.val) < 0:
+                if cp.Q.val > 0 or cp.ttd_l.val < 0:
                     return np.nan
 
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
@@ -645,7 +647,7 @@ class PowerPlant():
 
         for cp in self.nw.components.values():
             if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0 or cp.ttd_l.val < 0: # math.isnan()
+                if cp.Q.val > 0: # math.isnan() or cp.ttd_l.val < 0
                     return 0, 0, 0
 
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val

@@ -34,7 +34,7 @@ class optimization_problem():
 
     def get_bounds(self):
         """Return bounds of decision variables."""
-        return ([12, -10], [16, -7])
+        return ([20, -9], [27, -3])
 
 optimize = optimization_problem()
 optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R600')
@@ -68,7 +68,7 @@ for gen in range(num_gen):
 print()
 print('Power Output: {} MW'.format(round(1 / pop.champion_f[0], 4)))
 print('Turbine inlet pressure: {} bar'.format(round(pop.champion_x[0], 4)))
-print('Q_ihe: {} W'.format(round(pop.champion_x[1], 4)))
+print('Q_ihe: {} MW'.format(round(pop.champion_x[1], 4)))
 
 # scatter plot
 cm = plt.cm.get_cmap('RdYlBu')
