@@ -12,10 +12,6 @@ import geothermal_orc_design_fwi_chaofan
 
 # --------sensitivity analysis for every single parameter--------------------------
 fluids = ['R600'] #, 'Isobutane','R245fa', 'R600', 'R245CA', 'R123', 'Isopentane', 'n-Pentane', 'R113', 'R141B', 'R11'
-Td_bp_conds = np.linspace(1, 30, 16)
-# Td_bp_ecos = np.linspace(-8, -1, 9)
-T_pinch_conds = np.linspace(15, 1, 5)
-T_pinch_phs = np.linspace(15, 1, 5)
 for fluid in fluids:
     print('+' * 75)
     PowerPlantWithIHE = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid=fluid)

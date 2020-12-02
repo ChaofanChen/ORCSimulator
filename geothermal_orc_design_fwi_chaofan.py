@@ -207,6 +207,74 @@ class PowerPlant():
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
 
+    def calculate_efficiency_without_ihe(self, p_before_tur):
+
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
+#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
+        self.nw.components['internal heat exchanger'].set_attr(Q=0)
+        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
+
+        self.nw.solve('design')
+        self.nw.print_results()
+
+        for cp in self.nw.components.values():
+            if isinstance(cp, heat_exchanger):
+                if cp.Q.val > 0:
+                    return np.nan
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
+    def calculate_efficiency_with_ihe(self, p_before_tur):
+
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
+#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
+#        self.nw.components['internal heat exchanger'].set_attr(ttd_l=8)
+        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
+        self.nw.connections['reinjection'].set_attr(T=70)
+#        self.nw.components['brine evaporator'].set_attr(ttd_l=None)
+
+        self.nw.solve('design')
+        self.nw.print_results()
+
+        for cp in self.nw.components.values():
+            if isinstance(cp, heat_exchanger):
+                if cp.Q.val > 0:
+                    return np.nan
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+    
+    def calculate_efficiency_off_design(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection):
+
+        self.nw.connections['geosteam'].set_attr(m=20, T=140)
+        self.nw.connections['geobrine'].set_attr(m=180, T=140)
+        self.nw.connections['reinjection'].set_attr(T=70)
+        self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
+#        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
+        self.nw.components['main condenser'].set_attr(ttd_u=10)
+        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
+        self.nw.solve('design')
+        self.nw.save('ORC')
+
+        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
+        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
+        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
+        self.nw.solve('offdesign', design_path='ORC')
+        # self.nw.print_results()
+
+        # for cp in self.nw.components.values():
+        #     if isinstance(cp, heat_exchanger):
+        #         if cp.Q.val > 0:
+        #             return np.nan
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
     
     def calculate_efficiency_opt_without_ihe(self, x, working_fluid):
 
@@ -391,53 +459,6 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / 1e6 #/ self.nw.busses['thermal input'].P.val
 
-    def calculate_efficiency_off_design(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection):
-
-        self.nw.connections['geosteam'].set_attr(m=20, T=140)
-        self.nw.connections['geobrine'].set_attr(m=180, T=140)
-        self.nw.connections['reinjection'].set_attr(T=70)
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=2)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=-2)
-        self.nw.components['main condenser'].set_attr(ttd_u=10)
-        self.nw.components['brine evaporator'].set_attr(ttd_l=10)
-        self.nw.solve('design')
-        self.nw.save('ORC')
-
-        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
-        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
-        self.nw.connections['reinjection'].set_attr(T=T_reinjection)
-        self.nw.solve('offdesign', design_path='ORC')
-        # self.nw.print_results()
-
-        # for cp in self.nw.components.values():
-        #     if isinstance(cp, heat_exchanger):
-        #         if cp.Q.val > 0:
-        #             return np.nan
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
-            return np.nan
-        else:
-            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-
-    def calculate_efficiency_without_ihe(self, p_before_tur):
-
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
-        self.nw.components['internal heat exchanger'].set_attr(ttd_l=5)#Q=-1.1e7
-        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
-
-        self.nw.solve('design')
-        self.nw.print_results()
-
-        for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0:
-                    return np.nan
-
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
-            return np.nan
-        else:
-            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-
     def calculate_efficiency_opt_with_ihe(self, x, working_fluid):
 
         self.working_fluid = working_fluid
@@ -620,37 +641,11 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / 1e6 #/ self.nw.busses['thermal input'].P.val
 
-    def calculate_efficiency_with_ihe(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection, p_tur, Q_ihe, ttd_u_cond, ttd_l_evap):
-
-        self.nw.components['internal heat exchanger'].set_attr(Q=0)
-#        self.nw.connections['geosteam'].set_attr(m=geo_mass_flow * geo_steam_fraction, T=T_production)
-#        self.nw.connections['geobrine'].set_attr(m=geo_mass_flow * (1 - geo_steam_fraction), T=T_production)
-#        self.nw.connections['reinjection'].set_attr(T=57)
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=Td_bp_eco)
-#        self.nw.components['main condenser'].set_attr(ttd_u=ttd_u_cond)
-#        self.nw.components['brine evaporator'].set_attr(ttd_l=ttd_l_evap)
-        self.nw.connections['lsv_tur'].set_attr(p=26.3)
-
-        self.nw.solve('design')
-        self.nw.print_results()
-
-        for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0 or math.isnan(cp.ttd_l.val) < 0:
-                    return np.nan
-
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
-            return np.nan
-        else:
-            return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-
-    
     def print_result(self):
 
         for cp in self.nw.components.values():
             if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0:                 # or math.isnan(cp.kA.val)
+                if cp.Q.val > 0 or cp.ttd_l.val < 0: # math.isnan()
                     return 0, 0, 0
 
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
