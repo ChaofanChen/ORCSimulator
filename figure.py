@@ -16,7 +16,7 @@ for fluid in fluids:
                          header=0, names=['p_before_tur', 'power_output','thermal_efficiency', 'T_i'])
     fig, ax = plt.subplots()
     ax.plot(df['p_before_tur'], df['power_output'], color='blue', marker="o")
-    ax.set(xlabel= 'Pressure before turbine with ' + fluid + ' [bar]', ylabel='Net power output [MW]')
+    ax.set(xlabel= 'Turbine inlet pressure with ' + fluid + ' [bar]', ylabel='Net power output [MW]')
 #    plt.ylim(14, 19)
     ax2=ax.twinx()
     ax2.plot(df['p_before_tur'], df['T_i'], color='red', marker="*")

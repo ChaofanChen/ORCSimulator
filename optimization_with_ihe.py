@@ -18,6 +18,7 @@ class optimization_problem():
         f1 = 1 / self.model.calculate_efficiency_opt_with_ihe(x, working_fluid='R600')
         ci1 = -x[0] + x[1]
         print(x)
+        print(1/f1)
         return [f1, ci1]
 
     def get_nobj(self):
@@ -34,7 +35,7 @@ class optimization_problem():
 
     def get_bounds(self):
         """Return bounds of decision variables."""
-        return ([20, -9], [27, -3])
+        return ([23, -9], [27, -5])
 
 optimize = optimization_problem()
 optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R600')
@@ -52,9 +53,9 @@ for gen in range(num_gen):
     result["champion"].append(1 / pop.champion_f[0])
 
     decision_var = pop.get_x()
-    for Td_bp in decision_var:
-        result['Turbine inlet pressure'].append(Td_bp[0])
-        result['Q_ihe'].append(Td_bp[1])
+    for x in decision_var:
+        result['Turbine inlet pressure'].append(x[0])
+        result['Q_ihe'].append(x[1])
 
     fitness = pop.get_f()
     for power_output in fitness:

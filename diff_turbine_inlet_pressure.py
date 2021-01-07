@@ -21,7 +21,7 @@ for fluid in fluids:
     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 
     sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
-    p_before_turs = np.linspace(24, 26.3, 10)
+    p_before_turs = np.linspace(20, 26.3, 10)
     for p_before_tur in p_before_turs:
         eff = PowerPlantWithIHE.calculate_efficiency_without_ihe(p_before_tur)
         sensitivity_analysis_without_ihe.loc[p_before_tur, 'power_output'], \

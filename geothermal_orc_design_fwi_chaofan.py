@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import math
 import logging
+import tespy
 
 
 logger.define_logging(screen_level=logging.ERROR)
@@ -45,6 +46,8 @@ class PowerPlant():
 
     def __init__(self, working_fluid):
 
+#        print('CoolProp ver:%s'%(CP.__version__))
+#        print('TESPy ver:%s'%(tespy.__version__))
         self.working_fluid = working_fluid
         fluids = ['water', self.working_fluid, 'air']
         self.nw = network(fluids=fluids)
@@ -227,11 +230,11 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
-    def calculate_efficiency_with_ihe(self, p_before_tur):
+    def calculate_efficiency_with_ihe(self, p_tur, Q_ihe):
 
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-        self.nw.components['internal heat exchanger'].set_attr(Q=p_before_tur)
-        self.nw.connections['lsv_tur'].set_attr(p=24.999)
+        self.nw.components['internal heat exchanger'].set_attr(Q=Q_ihe)
+        self.nw.connections['lsv_tur'].set_attr(p=p_tur)
         self.nw.connections['reinjection'].set_attr(T=70)
         self.nw.components['brine evaporator'].set_attr(ttd_l=None)
 #        self.nw.connections['eb_em'].set_attr(x=0.1)
@@ -631,7 +634,7 @@ class PowerPlant():
         self.nw.components['brine evaporator'].set_attr(ttd_l=None)
 
         self.nw.solve('design')
-#        self.nw.print_results()
+#        self.nw.print_results() # colored=False
 
         for cp in self.nw.components.values():
             if isinstance(cp, heat_exchanger):
@@ -647,7 +650,7 @@ class PowerPlant():
 
         for cp in self.nw.components.values():
             if isinstance(cp, heat_exchanger):
-                if cp.Q.val > 0: # math.isnan() or cp.ttd_l.val < 0
+                if cp.Q.val > 0 or cp.ttd_l.val < 0: # math.isnan()
                     return 0, 0, 0
 
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
