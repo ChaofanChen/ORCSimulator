@@ -1,9 +1,8 @@
-from tespy.connections import connection, bus, ref
-from tespy.tools import char_line
-from tespy.networks import network
+from tespy.connections import Connection, Bus, Ref
+from tespy.networks import Network
 from tespy.components import (
-    heat_exchanger, pump, turbine, source, sink, cycle_closer, splitter,
-    merge, condenser, drum, valve, heat_exchanger_simple
+    HeatExchanger, Pump, Turbine, Source, Sink, CycleCloser, Splitter,
+    Merge, Condenser, Drum, Valve, HeatExchangerSimple
 )
 from tespy.tools import logger
 
@@ -50,7 +49,7 @@ class PowerPlant():
 #        print('TESPy ver:%s'%(tespy.__version__))
         self.working_fluid = working_fluid
         fluids = ['water', self.working_fluid, 'air']
-        self.nw = network(fluids=fluids)
+        self.nw = Network(fluids=fluids)
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
@@ -67,88 +66,88 @@ class PowerPlant():
 
         # main components
 
-        geo_steam = source('steam source')
-        geo_brine = source('brine source')
-        geo_reinjection = sink('reinjection well')
+        geo_steam = Source('steam source')
+        geo_brine = Source('brine source')
+        geo_reinjection = Sink('reinjection well')
 
-        air_in = source('ambient air source')
-        air_out = sink('ambient air sink')
-        air_cond = condenser('main condenser')
+        air_in = Source('ambient air source')
+        air_out = Sink('ambient air sink')
+        air_cond = Condenser('main condenser')
 
-        orc_cc = cycle_closer('orc cycle closer')
+        orc_cc = CycleCloser('orc cycle closer')
 
-        # evap_steam = condenser('steam evaporator')
-        evap_splitter = splitter('splitter evaporation')
-        evap_merge = merge('merge evaporation')
-        evap_steam = condenser('steam evaporator')
-        geo_steam_pump = pump('geosteam condensate pump')
-        evap_brine = heat_exchanger('brine evaporator')
-        dr = drum('drum')
+        # evap_steam = Condenser('steam evaporator')
+        evap_splitter = Splitter('splitter evaporation')
+        evap_merge = Merge('merge evaporation')
+        evap_steam = Condenser('steam evaporator')
+        geo_steam_pump = Pump('geosteam condensate pump')
+        evap_brine = HeatExchanger('brine evaporator')
+        dr = Drum('drum')
 
-        eco = heat_exchanger('economiser')
-        feed_working_fluid_pump = pump('feed working fluid pump')
-        geo_merge = merge('brine merge')
+        eco = HeatExchanger('economiser')
+        feed_working_fluid_pump = Pump('feed working fluid pump')
+        geo_merge = Merge('brine merge')
 
-        tur = turbine('turbine')
+        tur = Turbine('turbine')
 
-        ls_valve = valve('live steam valve')
+        ls_valve = Valve('live steam valve')
 
-        ihe = heat_exchanger('internal heat exchanger')
+        ihe = HeatExchanger('internal heat exchanger')
 
         # busses
-        power_bus = bus('power output')
+        power_bus = Bus('power output')
         power_bus.add_comps(
-            {'c': tur, 'char': -1},
-            {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
+            {'comp': tur, 'char': -1},
+            {'comp': feed_working_fluid_pump, 'char': -1}, {'comp': geo_steam_pump, 'char': -1}
         )
 
-        geothermal_bus = bus('thermal input')
+        geothermal_bus = Bus('thermal input')
         geothermal_bus.add_comps(
-            {'c': eco, 'char': -1}, {'c': evap_brine, 'char': -1},
-            {'c': evap_steam, 'char': -1}
+            {'comp': eco, 'char': -1}, {'comp': evap_brine, 'char': -1},
+            {'comp': evap_steam, 'char': -1}
         )
 
         self.nw.add_busses(power_bus, geothermal_bus)
 
         # turbine to condenser
-        ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
-        lsv_tur = connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
-        tur_ihe = connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
-        ihe_cond = connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
+        ls_in = Connection(orc_cc, 'out1', ls_valve, 'in1')
+        lsv_tur = Connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
+        tur_ihe = Connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
+        ihe_cond = Connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
         self.nw.add_conns(ls_in, lsv_tur, tur_ihe, ihe_cond)
 
         # condenser to steam generator
-        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
-        fwp_ihe = connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
+        cond_fwp = Connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
+        fwp_ihe = Connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
         self.nw.add_conns(cond_fwp, fwp_ihe)
 
         # steam generator
-        ihe_eco = connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
-        eco_dr = connection(eco, 'out2', dr, 'in1', label='eco_dr')
-        dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
-        esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
-        esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
-        eb_em = connection(evap_brine, 'out2', evap_merge, 'in1')
-        es_em = connection(evap_steam, 'out2', evap_merge, 'in2')
-        em_dr = connection(evap_merge, 'out1', dr, 'in2')
-        ls_out = connection(dr, 'out2', orc_cc, 'in1')
+        ihe_eco = Connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
+        eco_dr = Connection(eco, 'out2', dr, 'in1', label='eco_dr')
+        dr_esp = Connection(dr, 'out1', evap_splitter, 'in1')
+        esp_eb = Connection(evap_splitter, 'out1', evap_brine, 'in2')
+        esp_es = Connection(evap_splitter, 'out2', evap_steam, 'in2')
+        eb_em = Connection(evap_brine, 'out2', evap_merge, 'in1', label='eb_em')
+        es_em = Connection(evap_steam, 'out2', evap_merge, 'in2', label='es_em')
+        em_dr = Connection(evap_merge, 'out1', dr, 'in2')
+        ls_out = Connection(dr, 'out2', orc_cc, 'in1')
         self.nw.add_conns(ihe_eco, eco_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
 
         # air cold side
-        air_cold = connection(air_in, 'out1', air_cond, 'in2')
-        air_hot = connection(air_cond, 'out2', air_out, 'in1')
+        air_cold = Connection(air_in, 'out1', air_cond, 'in2')
+        air_hot = Connection(air_cond, 'out2', air_out, 'in1')
         self.nw.add_conns(air_cold, air_hot)
 
         # geo source
-        gs_es = connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
-        es_gsp = connection(evap_steam, 'out1', geo_steam_pump, 'in1')
-        gsp_gm = connection(geo_steam_pump, 'out1', geo_merge, 'in1')
-        gb_eb = connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
-        eb_gm = connection(evap_brine, 'out1', geo_merge, 'in2')
+        gs_es = Connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
+        es_gsp = Connection(evap_steam, 'out1', geo_steam_pump, 'in1')
+        gsp_gm = Connection(geo_steam_pump, 'out1', geo_merge, 'in1')
+        gb_eb = Connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
+        eb_gm = Connection(evap_brine, 'out1', geo_merge, 'in2')
         self.nw.add_conns(gs_es, es_gsp, gsp_gm, gb_eb, eb_gm)
 
-        gm_eco = connection(geo_merge, 'out1', eco, 'in1')
-        eco_gr = connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
+        gm_eco = Connection(geo_merge, 'out1', eco, 'in1')
+        eco_gr = Connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
         self.nw.add_conns(gm_eco, eco_gr)
 
         # fluid settings
@@ -168,15 +167,15 @@ class PowerPlant():
         ) / 1e3
         tur_ihe.set_attr(h=ws_stable_h0)
         ihe_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
-        fwp_ihe.set_attr(h=ref(cond_fwp, 1, 1e3))
+        fwp_ihe.set_attr(h=Ref(cond_fwp, 1, 1e3))
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
         gb_eb.set_attr(m=geo_mass_flow * (1 - geo_steam_share), T=T_brine_in, x=0)
 
         em_dr.set_attr()
-        eb_em.set_attr(x=0.5, label = 'eb_em')
-        es_em.set_attr(x=0.5, design=['x'], label = 'es_em')
+        eb_em.set_attr(x=0.5)
+        es_em.set_attr(x=0.5, design=['x'])
         eb_gm.set_attr(T=T_brine_in - 20)
 
 #        eco_dr.set_attr(Td_bp=-2)
@@ -210,18 +209,19 @@ class PowerPlant():
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
 
-    def calculate_efficiency_without_ihe(self, p_before_tur):
+    def calculate_without_ihe(self, p_before_tur):
 
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-#        self.nw.connections['eco_dr'].set_attr(Td_bp=-0.01)
         self.nw.components['internal heat exchanger'].set_attr(Q=0)
         self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
-
         self.nw.solve('design')
-        self.nw.print_results()
+
+    def calculate_efficiency_without_ihe(self, p_before_tur):
+
+        self.calculate_without_ihe(p_before_tur)
 
         for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
+            if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0:
                     return np.nan
 
@@ -229,6 +229,41 @@ class PowerPlant():
             return np.nan
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
+    def calculate_power_without_ihe(self, p_before_tur):
+
+        self.calculate_without_ihe(p_before_tur)
+
+        for cp in self.nw.components.values():
+            if isinstance(cp, HeatExchanger):
+                if cp.Q.val > 0:
+                    return np.nan
+
+        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+            return np.nan
+        else:
+            return self.nw.busses['power output'].P.val
+
+    def get_power(self):
+        return self.nw.busses['power output'].P.val
+
+    def get_efficiency(self):
+        return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
+
+    def get_T_reinjection(self):
+        return self.nw.connections['reinjection'].T.val
+
+    def get_p_before_turbine(self):
+        return self.nw.connections['lsv_tur'].p.val
+
+    def get_p_after_turbine(self):
+        return self.nw.connections['tur_ihe'].p.val
+
+    def get_T_after_turbine(self):
+        return self.nw.connections['tur_ihe'].T.val
+
+    def get_brine_evaporator_heat(self):
+        return self.nw.components['brine evaporator'].Q.val
 
     def calculate_efficiency_with_ihe(self, p_tur, Q_ihe):
 
@@ -244,7 +279,7 @@ class PowerPlant():
         self.nw.print_results()
 
         for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
+            if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0:
                     return np.nan
 
@@ -252,7 +287,7 @@ class PowerPlant():
             return np.nan
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-    
+
     def calculate_efficiency_off_design(self, T_production, geo_mass_flow, geo_steam_fraction, T_reinjection):
 
         self.nw.connections['geosteam'].set_attr(m=20, T=140)
@@ -272,19 +307,19 @@ class PowerPlant():
         # self.nw.print_results()
 
         # for cp in self.nw.components.values():
-        #     if isinstance(cp, heat_exchanger):
+        #     if isinstance(cp, HeatExchanger):
         #         if cp.Q.val > 0:
         #             return np.nan
         if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
             return np.nan
         else:
             return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
-    
+
     def calculate_efficiency_opt_without_ihe(self, x, working_fluid):
 
         self.working_fluid = working_fluid
         fluids = ['water', self.working_fluid, 'air']
-        self.nw = network(fluids=fluids)
+        self.nw = Network(fluids=fluids)
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
@@ -301,88 +336,88 @@ class PowerPlant():
 
         # main components
 
-        geo_steam = source('steam source')
-        geo_brine = source('brine source')
-        geo_reinjection = sink('reinjection well')
+        geo_steam = Source('steam source')
+        geo_brine = Source('brine source')
+        geo_reinjection = Sink('reinjection well')
 
-        air_in = source('ambient air source')
-        air_out = sink('ambient air sink')
-        air_cond = condenser('main condenser')
+        air_in = Source('ambient air source')
+        air_out = Sink('ambient air sink')
+        air_cond = Condenser('main condenser')
 
-        orc_cc = cycle_closer('orc cycle closer')
+        orc_cc = CycleCloser('orc cycle closer')
 
-        # evap_steam = condenser('steam evaporator')
-        evap_splitter = splitter('splitter evaporation')
-        evap_merge = merge('merge evaporation')
-        evap_steam = condenser('steam evaporator')
-        geo_steam_pump = pump('geosteam condensate pump')
-        evap_brine = heat_exchanger('brine evaporator')
-        dr = drum('drum')
+        # evap_steam = Condenser('steam evaporator')
+        evap_splitter = Splitter('splitter evaporation')
+        evap_merge = Merge('merge evaporation')
+        evap_steam = Condenser('steam evaporator')
+        geo_steam_pump = Pump('geosteam condensate pump')
+        evap_brine = HeatExchanger('brine evaporator')
+        dr = Drum('drum')
 
-        eco = heat_exchanger('economiser')
-        feed_working_fluid_pump = pump('feed working fluid pump')
-        geo_merge = merge('brine merge')
+        eco = HeatExchanger('economiser')
+        feed_working_fluid_pump = Pump('feed working fluid pump')
+        geo_merge = Merge('brine merge')
 
-        tur = turbine('turbine')
+        tur = Turbine('turbine')
 
-        ls_valve = valve('live steam valve')
+        ls_valve = Valve('live steam valve')
 
-        ihe = heat_exchanger('internal heat exchanger')
+        ihe = HeatExchanger('internal heat exchanger')
 
         # busses
-        power_bus = bus('power output')
+        power_bus = Bus('power output')
         power_bus.add_comps(
-            {'c': tur, 'char': -1},
-            {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
+            {'comp': tur, 'char': -1},
+            {'comp': feed_working_fluid_pump, 'char': -1}, {'comp': geo_steam_pump, 'char': -1}
         )
 
-        geothermal_bus = bus('thermal input')
+        geothermal_bus = Bus('thermal input')
         geothermal_bus.add_comps(
-            {'c': eco, 'char': -1}, {'c': evap_brine, 'char': -1},
-            {'c': evap_steam, 'char': -1}
+            {'comp': eco, 'char': -1}, {'comp': evap_brine, 'char': -1},
+            {'comp': evap_steam, 'char': -1}
         )
 
         self.nw.add_busses(power_bus, geothermal_bus)
 
         # turbine to condenser
-        ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
-        lsv_tur = connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
-        tur_ihe = connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
-        ihe_cond = connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
+        ls_in = Connection(orc_cc, 'out1', ls_valve, 'in1')
+        lsv_tur = Connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
+        tur_ihe = Connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
+        ihe_cond = Connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
         self.nw.add_conns(ls_in, lsv_tur, tur_ihe, ihe_cond)
 
         # condenser to steam generator
-        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
-        fwp_ihe = connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
+        cond_fwp = Connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
+        fwp_ihe = Connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
         self.nw.add_conns(cond_fwp, fwp_ihe)
 
         # steam generator
-        ihe_eco = connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
-        eco_dr = connection(eco, 'out2', dr, 'in1', label='eco_dr')
-        dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
-        esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
-        esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
-        eb_em = connection(evap_brine, 'out2', evap_merge, 'in1')
-        es_em = connection(evap_steam, 'out2', evap_merge, 'in2')
-        em_dr = connection(evap_merge, 'out1', dr, 'in2')
-        ls_out = connection(dr, 'out2', orc_cc, 'in1')
+        ihe_eco = Connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
+        eco_dr = Connection(eco, 'out2', dr, 'in1', label='eco_dr')
+        dr_esp = Connection(dr, 'out1', evap_splitter, 'in1')
+        esp_eb = Connection(evap_splitter, 'out1', evap_brine, 'in2')
+        esp_es = Connection(evap_splitter, 'out2', evap_steam, 'in2')
+        eb_em = Connection(evap_brine, 'out2', evap_merge, 'in1')
+        es_em = Connection(evap_steam, 'out2', evap_merge, 'in2')
+        em_dr = Connection(evap_merge, 'out1', dr, 'in2')
+        ls_out = Connection(dr, 'out2', orc_cc, 'in1')
         self.nw.add_conns(ihe_eco, eco_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
 
         # air cold side
-        air_cold = connection(air_in, 'out1', air_cond, 'in2')
-        air_hot = connection(air_cond, 'out2', air_out, 'in1')
+        air_cold = Connection(air_in, 'out1', air_cond, 'in2')
+        air_hot = Connection(air_cond, 'out2', air_out, 'in1')
         self.nw.add_conns(air_cold, air_hot)
 
         # geo source
-        gs_es = connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
-        es_gsp = connection(evap_steam, 'out1', geo_steam_pump, 'in1')
-        gsp_gm = connection(geo_steam_pump, 'out1', geo_merge, 'in1')
-        gb_eb = connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
-        eb_gm = connection(evap_brine, 'out1', geo_merge, 'in2')
+        gs_es = Connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
+        es_gsp = Connection(evap_steam, 'out1', geo_steam_pump, 'in1')
+        gsp_gm = Connection(geo_steam_pump, 'out1', geo_merge, 'in1')
+        gb_eb = Connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
+        eb_gm = Connection(evap_brine, 'out1', geo_merge, 'in2')
         self.nw.add_conns(gs_es, es_gsp, gsp_gm, gb_eb, eb_gm)
 
-        gm_eco = connection(geo_merge, 'out1', eco, 'in1')
-        eco_gr = connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
+        gm_eco = Connection(geo_merge, 'out1', eco, 'in1')
+        eco_gr = Connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
         self.nw.add_conns(gm_eco, eco_gr)
 
         # fluid settings
@@ -402,7 +437,7 @@ class PowerPlant():
         ) / 1e3
         tur_ihe.set_attr(h=ws_stable_h0)
         ihe_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
-        fwp_ihe.set_attr(h=ref(cond_fwp, 1, 1e3))
+        fwp_ihe.set_attr(h=Ref(cond_fwp, 1, 1e3))
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
@@ -443,7 +478,7 @@ class PowerPlant():
         tur_ihe.set_attr(h=None)
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
-        
+
         self.nw.components['internal heat exchanger'].set_attr(Q=0)
 #        print(x[0], x[1])
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
@@ -454,7 +489,7 @@ class PowerPlant():
 #        self.nw.print_results()
 
 #        for cp in self.nw.components.values():
-#            if isinstance(cp, heat_exchanger):
+#            if isinstance(cp, HeatExchanger):
 #                if cp.Q.val > 0:
 #                    return np.nan
 
@@ -467,7 +502,7 @@ class PowerPlant():
 
         self.working_fluid = working_fluid
         fluids = ['water', self.working_fluid, 'air']
-        self.nw = network(fluids=fluids)
+        self.nw = Network(fluids=fluids)
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
@@ -484,88 +519,88 @@ class PowerPlant():
 
         # main components
 
-        geo_steam = source('steam source')
-        geo_brine = source('brine source')
-        geo_reinjection = sink('reinjection well')
+        geo_steam = Source('steam source')
+        geo_brine = Source('brine source')
+        geo_reinjection = Sink('reinjection well')
 
-        air_in = source('ambient air source')
-        air_out = sink('ambient air sink')
-        air_cond = condenser('main condenser')
+        air_in = Source('ambient air source')
+        air_out = Sink('ambient air sink')
+        air_cond = Condenser('main condenser')
 
-        orc_cc = cycle_closer('orc cycle closer')
+        orc_cc = CycleCloser('orc cycle closer')
 
-        # evap_steam = condenser('steam evaporator')
-        evap_splitter = splitter('splitter evaporation')
-        evap_merge = merge('merge evaporation')
-        evap_steam = condenser('steam evaporator')
-        geo_steam_pump = pump('geosteam condensate pump')
-        evap_brine = heat_exchanger('brine evaporator')
-        dr = drum('drum')
+        # evap_steam = Condenser('steam evaporator')
+        evap_splitter = Splitter('splitter evaporation')
+        evap_merge = Merge('merge evaporation')
+        evap_steam = Condenser('steam evaporator')
+        geo_steam_pump = Pump('geosteam condensate pump')
+        evap_brine = HeatExchanger('brine evaporator')
+        dr = Drum('drum')
 
-        eco = heat_exchanger('economiser')
-        feed_working_fluid_pump = pump('feed working fluid pump')
-        geo_merge = merge('brine merge')
+        eco = HeatExchanger('economiser')
+        feed_working_fluid_pump = Pump('feed working fluid pump')
+        geo_merge = Merge('brine merge')
 
-        tur = turbine('turbine')
+        tur = Turbine('turbine')
 
-        ls_valve = valve('live steam valve')
+        ls_valve = Valve('live steam valve')
 
-        ihe = heat_exchanger('internal heat exchanger')
+        ihe = HeatExchanger('internal heat exchanger')
 
         # busses
-        power_bus = bus('power output')
+        power_bus = Bus('power output')
         power_bus.add_comps(
-            {'c': tur, 'char': -1},
-            {'c': feed_working_fluid_pump, 'char': -1}, {'c': geo_steam_pump, 'char': -1}
+            {'comp': tur, 'char': -1},
+            {'comp': feed_working_fluid_pump, 'char': -1}, {'comp': geo_steam_pump, 'char': -1}
         )
 
-        geothermal_bus = bus('thermal input')
+        geothermal_bus = Bus('thermal input')
         geothermal_bus.add_comps(
-            {'c': eco, 'char': -1}, {'c': evap_brine, 'char': -1},
-            {'c': evap_steam, 'char': -1}
+            {'comp': eco, 'char': -1}, {'comp': evap_brine, 'char': -1},
+            {'comp': evap_steam, 'char': -1}
         )
 
         self.nw.add_busses(power_bus, geothermal_bus)
 
         # turbine to condenser
-        ls_in = connection(orc_cc, 'out1', ls_valve, 'in1')
-        lsv_tur = connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
-        tur_ihe = connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
-        ihe_cond = connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
+        ls_in = Connection(orc_cc, 'out1', ls_valve, 'in1')
+        lsv_tur = Connection(ls_valve, 'out1', tur, 'in1', label='lsv_tur')
+        tur_ihe = Connection(tur, 'out1', ihe, 'in1', label='tur_ihe')
+        ihe_cond = Connection(ihe, 'out1', air_cond, 'in1', label='ihe_cond')
         self.nw.add_conns(ls_in, lsv_tur, tur_ihe, ihe_cond)
 
         # condenser to steam generator
-        cond_fwp = connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
-        fwp_ihe = connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
+        cond_fwp = Connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='cond_fwp')
+        fwp_ihe = Connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='fwp_ihe')
         self.nw.add_conns(cond_fwp, fwp_ihe)
 
         # steam generator
-        ihe_eco = connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
-        eco_dr = connection(eco, 'out2', dr, 'in1', label='eco_dr')
-        dr_esp = connection(dr, 'out1', evap_splitter, 'in1')
-        esp_eb = connection(evap_splitter, 'out1', evap_brine, 'in2')
-        esp_es = connection(evap_splitter, 'out2', evap_steam, 'in2')
-        eb_em = connection(evap_brine, 'out2', evap_merge, 'in1')
-        es_em = connection(evap_steam, 'out2', evap_merge, 'in2')
-        em_dr = connection(evap_merge, 'out1', dr, 'in2')
-        ls_out = connection(dr, 'out2', orc_cc, 'in1')
+        ihe_eco = Connection(ihe, 'out2', eco, 'in2', label='ihe_eco')
+        eco_dr = Connection(eco, 'out2', dr, 'in1', label='eco_dr')
+        dr_esp = Connection(dr, 'out1', evap_splitter, 'in1')
+        esp_eb = Connection(evap_splitter, 'out1', evap_brine, 'in2')
+        esp_es = Connection(evap_splitter, 'out2', evap_steam, 'in2')
+        eb_em = Connection(evap_brine, 'out2', evap_merge, 'in1')
+        es_em = Connection(evap_steam, 'out2', evap_merge, 'in2')
+        em_dr = Connection(evap_merge, 'out1', dr, 'in2')
+        ls_out = Connection(dr, 'out2', orc_cc, 'in1')
         self.nw.add_conns(ihe_eco, eco_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
 
         # air cold side
-        air_cold = connection(air_in, 'out1', air_cond, 'in2')
-        air_hot = connection(air_cond, 'out2', air_out, 'in1')
+        air_cold = Connection(air_in, 'out1', air_cond, 'in2')
+        air_hot = Connection(air_cond, 'out2', air_out, 'in1')
         self.nw.add_conns(air_cold, air_hot)
 
         # geo source
-        gs_es = connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
-        es_gsp = connection(evap_steam, 'out1', geo_steam_pump, 'in1')
-        gsp_gm = connection(geo_steam_pump, 'out1', geo_merge, 'in1')
-        gb_eb = connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
-        eb_gm = connection(evap_brine, 'out1', geo_merge, 'in2')
+        gs_es = Connection(geo_steam, 'out1', evap_steam, 'in1', label='geosteam')
+        es_gsp = Connection(evap_steam, 'out1', geo_steam_pump, 'in1')
+        gsp_gm = Connection(geo_steam_pump, 'out1', geo_merge, 'in1')
+        gb_eb = Connection(geo_brine, 'out1', evap_brine, 'in1', label='geobrine')
+        eb_gm = Connection(evap_brine, 'out1', geo_merge, 'in2')
         self.nw.add_conns(gs_es, es_gsp, gsp_gm, gb_eb, eb_gm)
 
-        gm_eco = connection(geo_merge, 'out1', eco, 'in1')
-        eco_gr = connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
+        gm_eco = Connection(geo_merge, 'out1', eco, 'in1')
+        eco_gr = Connection(eco, 'out1', geo_reinjection, 'in1', label='reinjection')
         self.nw.add_conns(gm_eco, eco_gr)
 
         # fluid settings
@@ -585,7 +620,7 @@ class PowerPlant():
         ) / 1e3
         tur_ihe.set_attr(h=ws_stable_h0)
         ihe_cond.set_attr(Td_bp=8, design=['Td_bp'], p0=PSI('P', 'T', T_amb + 273.15, 'Q', 1, self.working_fluid) / 1e5)
-        fwp_ihe.set_attr(h=ref(cond_fwp, 1, 1e3))
+        fwp_ihe.set_attr(h=Ref(cond_fwp, 1, 1e3))
 
         # steam generator
         gs_es.set_attr(m=geo_mass_flow * geo_steam_share, T=T_brine_in, x=1, p0=5)
@@ -626,7 +661,7 @@ class PowerPlant():
         tur_ihe.set_attr(h=None)
         fwp_ihe.set_attr(h=None)
         eb_gm.set_attr(T=None)
-        
+
         self.nw.connections['lsv_tur'].set_attr(p=x[0])
         self.nw.components['internal heat exchanger'].set_attr(Q=x[1]*1e6)
         self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
@@ -637,7 +672,7 @@ class PowerPlant():
 #        self.nw.print_results() # colored=False
 
         for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
+            if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0 or cp.ttd_l.val < 0:
                     return np.nan
 
@@ -646,19 +681,19 @@ class PowerPlant():
         else:
             return self.nw.busses['power output'].P.val / 1e6 #/ self.nw.busses['thermal input'].P.val
 
-    def print_result(self):
+    def get_results(self):
 
         for cp in self.nw.components.values():
-            if isinstance(cp, heat_exchanger):
+            if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0 or cp.ttd_l.val < 0: # math.isnan()
                     return 0, 0, 0
 
         eta_th = self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
         power = self.nw.busses['power output'].P.val
-        print('Power output: {} MW'.format(round(power / 1e6, 4)))
-        print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
+        # print('Power output: {} MW'.format(round(power / 1e6, 4)))
+        # print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
         return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
-    
+
     def plot_Ts(self, fn='fluid', Td_bp_cond=1):
 
         T_before_turbine = self.nw.connections['lsv_tur'].T.val
@@ -740,7 +775,7 @@ class PowerPlant():
         plt.savefig('ORC_Ts_plot_' + fn + '.png')
         # plt.show()
 
-        
+
     # def plot_process(self, fn='somename'):
     #
     #     result_dict = {
@@ -777,5 +812,3 @@ class PowerPlant():
     #     iso_T = np.arange(0, 201, 25)
     #     self.diagram.set_isolines(T=iso_T)
     #     self.diagram.calc_isolines()
-    
-    

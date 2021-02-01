@@ -6,7 +6,7 @@ Created on Mon Nov 30 13:54:02 2020
 @author: chencha
 """
 import matplotlib.pyplot as plt
-import geothermal_orc_design_fwi_chaofan 
+import geothermal_orc_design_fwi_chaofan
 
 # -----------parametric optimization for every working fluid-------------------------------------------
 import pygmo as pg
@@ -14,9 +14,10 @@ import pygmo as pg
 class optimization_problem():
 
     def fitness(self, x):
-        f1 = 1 / self.model.calculate_efficiency_opt_without_ihe(x, working_fluid='R245CA')
+        self.model.calculate_efficiency_without_ihe(x[0])
+        f1 = -self.model.get_results()[0]
         ci1 = -x[0] + x[1]
-        print(x)
+        # print(x)
         return [f1, ci1]
 
     def get_nobj(self):
@@ -37,6 +38,7 @@ class optimization_problem():
 
 optimize = optimization_problem()
 optimize.model = geothermal_orc_design_fwi_chaofan.PowerPlant(working_fluid='R245CA')
+optimize.model.calculate_efficiency_without_ihe(15)
 prob = pg.problem(optimize)
 num_gen = 15
 
