@@ -24,19 +24,19 @@ for fluid in fluids:
     sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'T_i'])
     state.update(
         CP.QT_INPUTS, 1,
-        PowerPlantWithIHE.nw.connections['geobrine'].T.val_SI -
-        30 - PowerPlantWithIHE.nw.components['brine evaporator'].ttd_l.val)
+        PowerPlantWithIHE.nw.get_conn('geobrine').T.val_SI -
+        30 - PowerPlantWithIHE.nw.get_comp('brine evaporator').ttd_l.val)
     p_min = state.p()
     state.update(
         CP.QT_INPUTS, 1,
-        PowerPlantWithIHE.nw.connections['geobrine'].T.val_SI -
-        0.1 - PowerPlantWithIHE.nw.components['brine evaporator'].ttd_l.val)
+        PowerPlantWithIHE.nw.get_conn('geobrine').T.val_SI -
+        0.1 - PowerPlantWithIHE.nw.get_comp('brine evaporator').ttd_l.val)
     p_max = state.p()
     p_before_turs = np.linspace(p_min, p_max, 10) / 1e5
     for p_before_tur in p_before_turs:
         eff = PowerPlantWithIHE.calculate_efficiency_without_ihe(p_before_tur)
         if not PowerPlantWithIHE.documented:
-            PowerPlantWithIHE.nw.document_model(filename=fluid + '.tex')
+#            PowerPlantWithIHE.nw.document_model(filename=fluid + '.tex')
             PowerPlantWithIHE.documented = True
         sensitivity_analysis_without_ihe.loc[p_before_tur, 'power_output'], \
         sensitivity_analysis_without_ihe.loc[p_before_tur, 'thermal_efficiency'],\

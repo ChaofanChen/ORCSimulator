@@ -211,16 +211,16 @@ class PowerPlant():
 
     def calculate_without_ihe(self, p_before_tur):
 
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-        self.nw.components['internal heat exchanger'].set_attr(Q=0)
-        self.nw.connections['lsv_tur'].set_attr(p=p_before_tur)
+        self.nw.get_conn('ihe_cond').set_attr(Td_bp=None)
+        self.nw.get_comp('internal heat exchanger').set_attr(Q=0)
+        self.nw.get_conn('lsv_tur').set_attr(p=p_before_tur)
         self.nw.solve('design')
 
     def calculate_efficiency_without_ihe(self, p_before_tur):
 
         self.calculate_without_ihe(p_before_tur)
 
-        for cp in self.nw.components.values():
+        for cp in self.nw.comps['object']:
             if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0:
                     return np.nan
@@ -234,7 +234,7 @@ class PowerPlant():
 
         self.calculate_without_ihe(p_before_tur)
 
-        for cp in self.nw.components.values():
+        for cp in self.nw.comps['object']:
             if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0:
                     return np.nan
@@ -251,34 +251,34 @@ class PowerPlant():
         return self.nw.busses['power output'].P.val / self.nw.busses['thermal input'].P.val
 
     def get_T_reinjection(self):
-        return self.nw.connections['reinjection'].T.val
+        return self.nw.get_conn('reinjection').T.val
 
     def get_p_before_turbine(self):
-        return self.nw.connections['lsv_tur'].p.val
+        return self.nw.get_conn('lsv_tur').p.val
 
     def get_p_after_turbine(self):
-        return self.nw.connections['tur_ihe'].p.val
+        return self.nw.get_conn('tur_ihe').p.val
 
     def get_T_after_turbine(self):
-        return self.nw.connections['tur_ihe'].T.val
+        return self.nw.get_conn('tur_ihe').T.val
 
     def get_brine_evaporator_heat(self):
-        return self.nw.components['brine evaporator'].Q.val
+        return self.nw.get_comp('brine evaporator').Q.val
 
     def calculate_efficiency_with_ihe(self, p_tur, Q_ihe):
 
-        self.nw.connections['ihe_cond'].set_attr(Td_bp=None)
-        self.nw.components['internal heat exchanger'].set_attr(Q=Q_ihe)
-        self.nw.connections['lsv_tur'].set_attr(p=p_tur)
-        self.nw.connections['reinjection'].set_attr(T=70)
-        self.nw.components['brine evaporator'].set_attr(ttd_l=None)
+        self.nw.get_conn('ihe_cond').set_attr(Td_bp=None)
+        self.nw.get_comp('internal heat exchanger').set_attr(Q=Q_ihe)
+        self.nw.get_conn('lsv_tur').set_attr(p=p_tur)
+        self.nw.get_conn('reinjection').set_attr(T=70)
+        self.nw.get_comp('brine evaporator').set_attr(ttd_l=None)
 #        self.nw.connections['eb_em'].set_attr(x=0.1)
 #        self.nw.connections['es_em'].set_attr(x=0.1)
 
         self.nw.solve('design')
         self.nw.print_results()
 
-        for cp in self.nw.components.values():
+        for cp in self.nw.comps['object']:
             if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0:
                     return np.nan
@@ -683,7 +683,7 @@ class PowerPlant():
 
     def get_results(self):
 
-        for cp in self.nw.components.values():
+        for cp in self.nw.comps['object']:
             if isinstance(cp, HeatExchanger):
                 if cp.Q.val > 0 or cp.ttd_l.val < 0: # math.isnan()
                     return 0, 0, 0
@@ -692,7 +692,7 @@ class PowerPlant():
         power = self.nw.busses['power output'].P.val
         # print('Power output: {} MW'.format(round(power / 1e6, 4)))
         # print('Thermal efficiency: {} %'.format(round(eta_th * 100, 4)))
-        return power / 1e6, eta_th * 100, self.nw.connections['reinjection'].T.val
+        return power / 1e6, eta_th * 100, self.nw.get_conn('reinjection').T.val
 
     def plot_Ts(self, fn='fluid', Td_bp_cond=1):
 
