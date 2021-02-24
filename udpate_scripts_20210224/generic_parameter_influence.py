@@ -36,36 +36,26 @@ for fluid in fluids:
     PP = geothermal_orc_design.PowerPlant(working_fluid=fluid)
     PP.documented = False
 
-    # ihe_desuperheat_ude = UserDefinedEquation(
-    #     label='ihe deshuperheat ratio',
-    #     func=desuperheat, deriv=desuperheat_deriv,
-    #     conns=[
-    #         PP.nw.get_conn('tur_ihe'),
-    #         PP.nw.get_conn('ihe_cond'),
-    #         PP.nw.get_conn('fwp_ihe')],
-    # # specify to 0.99999 for maximum physically possible heat extraction
-    #     params={'distance': 0.0}
-    # )
-    #
-    # PP.nw.add_ude(ihe_desuperheat_ude)
     print('Working fluid:', fluid)
     state = CP.AbstractState('HEOS', fluid)
     T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 
-    sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV'])
+    sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV', 'geo_steam_share'])
 
     Q_range = -np.linspace(3e7, 1e3, 10)
+    x_range = np.linspace(0.05, 0.20, 7)
 
     PP.nw.get_comp('internal heat exchanger').set_attr(pr1=1, pr2=1)
-    for Q in Q_range:
-        PP.run_simulation(Q_brine_ev=Q, Q_ihe=0, T_air_hot=15)
+    for x in x_range:
+        PP.run_simulation(brine_evap_Td=-5, Q_ihe=0, T_air_hot=15, geo_steam_share=x)
 
         sensitivity_analysis_without_ihe.loc[PP.get_p_before_turbine()] = [
             -PP.get_power(), PP.get_efficiency(), -PP.get_net_power(),
             PP.get_net_efficiency(), PP.get_T_reinjection(),
             PP.get_internal_heat_exchanger_heat(),
-            PP.get_brine_evaporator_heat()
+            PP.get_brine_evaporator_heat(),
+            x
         ]
 
     print(sensitivity_analysis_without_ihe)
