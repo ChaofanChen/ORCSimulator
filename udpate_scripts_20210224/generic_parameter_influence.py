@@ -41,18 +41,19 @@ for fluid in fluids:
     T_crit = state.trivial_keyed_output(CP.iT_critical) - 273.15
     print('Critical temperature: {} °C'.format(round(T_crit, 4)))
 
-    sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV', 'geo_steam_share'])
+    sensitivity_analysis_without_ihe = pd.DataFrame(columns=['turbine inlet pressure', 'power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV', 'geo_steam_share'])
 
     Q_range = -np.linspace(3e7, 1e3, 10)
     x_range = np.linspace(0.05, 0.20, 7)
 
-    PP.nw.get_comp('internal heat exchanger').set_attr(pr1=1, pr2=1)
+    PP.nw.get_comp('internal heat exchanger').set_attr(pr1=0.98, pr2=0.98)
     for x in x_range:
-        PP.run_simulation(brine_evap_Td=-5, Q_ihe=0, T_air_hot=15, geo_steam_share=x)
+        PP.run_simulation(brine_evap_Td=-5, IHE_sizing=.999, T_air_hot=15, geo_steam_share=x)
 
-        sensitivity_analysis_without_ihe.loc[PP.get_p_before_turbine()] = [
-            -PP.get_power(), PP.get_efficiency(), -PP.get_net_power(),
-            PP.get_net_efficiency(), PP.get_T_reinjection(),
+        sensitivity_analysis_without_ihe.loc[len(sensitivity_analysis_without_ihe)] = [
+            PP.get_p_before_turbine(), -PP.get_power(), PP.get_efficiency(),
+            -PP.get_net_power(), PP.get_net_efficiency(),
+            PP.get_T_reinjection(),
             PP.get_internal_heat_exchanger_heat(),
             PP.get_brine_evaporator_heat(),
             x
@@ -63,5 +64,7 @@ for fluid in fluids:
     geothermal_orc_design.plot_sensitivity_analysis(
         sensitivity_analysis_without_ihe,
         fn='with_working_fluid_of_' + fluid,
-        y1='net_power', y2='net_efficiency',
-        y1_label='Net power output in MW', y2_label='Net efficiency in %', x_label='Turbine inlet pressure in bar')
+        x='geo_steam_share',
+        x_label='Geosteam mass fraction',
+        y1='net_power', y2='T_i',
+        y1_label='Net power output in MW', y2_label='Brine reinjection temperature in °C')

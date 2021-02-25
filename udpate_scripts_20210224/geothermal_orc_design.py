@@ -24,13 +24,13 @@ logger.define_logging(screen_level=logging.WARNING)
 
 
 def plot_sensitivity_analysis(
-        sensitivity_analysis, fn='fluid', y1='', y2='',
+        sensitivity_analysis, fn='fluid', x='', y1='', y2='',
         y1_label='', y2_label='', x_label=''):
     fig, ax = plt.subplots()
-    ax.plot(sensitivity_analysis.index, sensitivity_analysis[y1], color='blue', marker="o")
+    ax.plot(sensitivity_analysis[x], sensitivity_analysis[y1], color='blue', marker="o")
     ax.set(xlabel=x_label, ylabel=y1_label)
     ax2=ax.twinx()
-    ax2.plot(sensitivity_analysis.index, sensitivity_analysis[y2], color='red', marker="*")
+    ax2.plot(sensitivity_analysis[x], sensitivity_analysis[y2], color='red', marker="*")
     ax2.set(ylabel=y2_label)
     # plt.ylim(10, 20)
     ax.yaxis.label.set_color('blue')
