@@ -26,7 +26,7 @@ logger.define_logging(screen_level=logging.WARNING)
 def plot_sensitivity_analysis(
         sensitivity_analysis, fn='fluid', y1='', y2='',
         y1_label='', y2_label='', x_label=''):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
     ax.plot(sensitivity_analysis.index, sensitivity_analysis[y1], color='blue', marker="o")
     ax.set(xlabel=x_label, ylabel=y1_label)
     ax2=ax.twinx()
@@ -224,7 +224,7 @@ class PowerPlant():
 
         # steam generator
         evap_steam.set_attr(offdesign=['kA_char'])  # no pr2 due to drum pressure balance
-        evap_brine.set_attr(pr1=0.98, ttd_l=5, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
+        evap_brine.set_attr(pr1=0.98, ttd_l=8, offdesign=['kA_char'])  # no pr2 due to drum pressure balance
         eco.set_attr(pr1=0.98, pr2=0.98)
         # geo_brine_pump.set_attr(eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char'])
 
@@ -291,6 +291,8 @@ class PowerPlant():
                     if cp.Q.val > 0:
                         return np.nan
                     elif cp.kA.val <= 0:
+                        return np.nan
+                    elif cp.ttd_l.val <= 0:
                         return np.nan
         return value
 

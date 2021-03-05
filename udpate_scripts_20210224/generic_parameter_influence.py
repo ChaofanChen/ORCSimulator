@@ -55,7 +55,7 @@ for fluid in fluids:
 
     sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV'])
 
-    Q_range = -np.linspace(3e7, 1e3, 10)
+    Q_range = -np.linspace(3e7, 1e6, 20)
 
     PP.nw.get_comp('internal heat exchanger').set_attr(pr1=1, pr2=1)
     for Q in Q_range:
@@ -69,6 +69,7 @@ for fluid in fluids:
         ]
 
     print(sensitivity_analysis_without_ihe)
+    sensitivity_analysis_without_ihe.to_csv('diff_p_before_tur_' + fluid + '_without_ihe.csv')
 
     geothermal_orc_design.plot_sensitivity_analysis(
         sensitivity_analysis_without_ihe,
