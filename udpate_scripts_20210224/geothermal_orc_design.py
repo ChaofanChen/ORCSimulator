@@ -251,11 +251,14 @@ class PowerPlant():
 
     def run_simulation(
         self, p_before_tur=None, Q_ihe=None, Q_brine_ev=None,
-        T_reinjection=None, brine_evap_Td=None, T_air_hot=None, IHE_sizing=None):
+        T_reinjection=None, brine_evap_Td=None, T_air_hot=None, IHE_sizing=None, 
+        geo_mass=200, geo_steam_share=0.1):
         self.nw.get_comp('internal heat exchanger').set_attr(Q=Q_ihe)
         self.nw.get_conn('lsv_tur').set_attr(p=p_before_tur)
         self.nw.get_conn('reinjection').set_attr(T=T_reinjection)
         self.nw.get_comp('brine evaporator').set_attr(Q=Q_brine_ev)
+        self.nw.get_conn('geosteam').set_attr(m=geo_mass*geo_steam_share)
+        self.nw.get_conn('geobrine').set_attr(m=geo_mass*(1-geo_steam_share))
 
         if brine_evap_Td is not None:
             self.nw.get_conn('brine to eco').set_attr(T=Ref(self.nw.get_conn('geobrine mix'), 1, brine_evap_Td))
@@ -277,6 +280,7 @@ class PowerPlant():
 
         try:
             self.nw.solve('design')
+#            self.nw.print_results()
         except ValueError:
             self.nw.res = [1]
             pass
