@@ -320,6 +320,9 @@ class PowerPlant():
 
     def get_p_after_turbine(self):
         return self.check_simulation(self.nw.get_conn('tur_ihe').p.val)
+    
+    def get_p_after_condenser(self):
+        return self.check_simulation(self.nw.get_conn('cond_fwp').p.val)
 
     def get_T_after_turbine(self):
         return self.check_simulation(self.nw.get_conn('tur_ihe').T.val)
