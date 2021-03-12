@@ -7,15 +7,15 @@ Created on Mon Nov 30 13:54:02 2020
 """
 import matplotlib.pyplot as plt
 import geothermal_orc_design
-from tespy.tools.helpers import UserDefinedEquation
-from tespy.tools.fluid_properties import h_mix_pT, T_mix_ph
+#from tespy.tools.helpers import UserDefinedEquation
+#from tespy.tools.fluid_properties import h_mix_pT, T_mix_ph
 from collections import OrderedDict
-import CoolProp as CP
-import numpy as np
+#import CoolProp as CP
+#import numpy as np
 import pandas as pd
 # -----------parametric optimization for every working fluid-------------------
 import pygmo as pg
-import matplotlib.pyplot as plt
+
 from znes_plotting import plot, shared
 
 import itertools
@@ -54,14 +54,14 @@ class optimization_problem():
 
 
 optimize = optimization_problem()
-optimize.model = geothermal_orc_design.PowerPlant(working_fluid='R113')
+optimize.model = geothermal_orc_design.PowerPlant(working_fluid='R245CA')
 optimize.model.nw.get_comp('internal heat exchanger').set_attr(pr1=.98, pr2=.98)
 
 
 optimize.params_to_opt = OrderedDict(
     Q_brine_ev={'min': -3e7, 'max': -1, 'unit': 'W', 'label': 'Brinve evaporator heat'},
-    IHE_sizing={'min': 0.0, 'max': 0.99, 'unit': '1', 'label': 'Internal heat exchanger size'},
-    T_air_hot={'min': 10, 'max': 25, 'unit': 'K', 'label': 'Condenser air temperature increase'}
+    IHE_sizing={'min': 0.999, 'max': 0.999, 'unit': '1', 'label': 'Internal heat exchanger size'},
+    T_air_hot={'min': 13, 'max': 22, 'unit': 'K', 'label': 'Condenser air temperature increase'}
 )
 
 optimize.objective_value = optimize.model.get_net_power
@@ -88,13 +88,13 @@ for gen in range(num_gen):
     individual = 0
     for x in pop.get_x():
         for i in range(len(x)):
-            individuals.loc[(gen, individual), params_list[i]] = x[i]
+            individuals.loc[[(gen, individual)], params_list[i]] = x[i]
         individual += 1
 
     individual = 0
     for objective in pop.get_f():
         for i in range(len(objective)):
-            individuals.loc[(gen, individual), objectives_list[i]] = objective[i]
+            individuals.loc[[(gen, individual)], objectives_list[i]] = objective[i]
         individual += 1
 
     print()
