@@ -94,7 +94,7 @@ for fluid in fluids:
         ORC.run_simulation, ORC.get_power,
         a=-3e7, b=0, tol=1, param_to_opt='Q_brine_ev',
         func_params={'Q_ihe': 0, 'T_air_hot': 15})
-    optima.loc[fluid, r'$p_1$ in bar'] = ORC.get_p_before_turbine()
+    optima.loc[fluid, r'$p_1$ in bar'] = ORC.get_T_before_turbine()
     optima.loc[fluid, r'$p_2$ in bar'] = ORC.get_p_after_turbine()
     optima.loc[fluid, r'$T_2$ in °C'] = ORC.get_T_after_turbine()
     optima.loc[fluid, r'$T_\mathrm{reinj}$ in °C'] = ORC.get_T_reinjection()

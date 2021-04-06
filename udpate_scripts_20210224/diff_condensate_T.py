@@ -30,7 +30,7 @@ def desuperheat_deriv(ude):
     return ude.jacobian
 
 # --------sensitivity analysis for every single parameter--------------------------
-fluids = ['R245CA']
+fluids = ['R245CA'] # , 'Isopentane', 'n-Pentane', 'R123', 'R113', 'R141B', 'R11', 'R245fa', 'R600'
 for fluid in fluids:
     print('+' * 75)
     PP = geothermal_orc_design.PowerPlant(working_fluid=fluid)
@@ -56,13 +56,13 @@ for fluid in fluids:
     sensitivity_analysis_without_ihe = pd.DataFrame(columns=['power_output', 'thermal_efficiency', 'net_power', 'net_efficiency', 'T_i', 'Q_IHE', 'Q_Brine_EV'])
 
     Q_range = -np.linspace(12.560e6, 1e6, 1)
-    T_range = np.linspace(13, 22, 20)
+    T_range = np.linspace(13, 22, 5)
 
 #    PP.nw.get_comp('internal heat exchanger').set_attr(pr1=1, pr2=1)
     for T in T_range:
         PP.run_simulation(Q_brine_ev=-12.560e6, Q_ihe=-3e6, T_air_hot=T)
 
-        sensitivity_analysis_without_ihe.loc[PP.get_p_after_condenser()] = [
+        sensitivity_analysis_without_ihe.loc[PP.get_T_after_condenser()] = [
             -PP.get_power()/1e6, PP.get_efficiency()*100, -PP.get_net_power()/1e6,
             PP.get_net_efficiency()*100, PP.get_T_reinjection(),
             PP.get_internal_heat_exchanger_heat(),
@@ -76,4 +76,4 @@ for fluid in fluids:
         sensitivity_analysis_without_ihe,
         fn='with_working_fluid_of_' + fluid,
         y1='net_power', y2='net_efficiency',
-        y1_label='Net power output (MW)', y2_label='Net efficiency (%)', x_label='Condenser outlet pressure (bar)')
+        y1_label='Net power output (MW)', y2_label='Net efficiency (%)', x_label='Condenser outlet temperature '  + fluid + ' (°C)')

@@ -24,7 +24,7 @@ import itertools
 class optimization_problem():
 
     def fitness(self, x):
-        inputs = {}
+        inputs = {'IHE_sizing': 0.999}
         i = 0
         for val in x:
             inputs.update({list(self.params_to_opt.keys())[i]: x[i]})
@@ -59,13 +59,13 @@ optimize.model.nw.get_comp('internal heat exchanger').set_attr(pr1=.98, pr2=.98)
 
 
 optimize.params_to_opt = OrderedDict(
-    Q_brine_ev={'min': -3e7, 'max': -1, 'unit': 'W', 'label': 'Brinve evaporator heat'},
-    IHE_sizing={'min': 0.999, 'max': 0.999, 'unit': '1', 'label': 'Internal heat exchanger size'},
-    T_air_hot={'min': 13, 'max': 22, 'unit': 'K', 'label': 'Condenser air temperature increase'}
+    Q_brine_ev={'min': -3e7, 'max': -1, 'unit': 'W', 'label': 'Heat exchange rate of brine evaporator (W)'},
+#    IHE_sizing={'min': 0.999, 'max': 0.999, 'unit': '1', 'label': 'Internal heat exchanger size'},
+    T_air_hot={'min': 13, 'max': 22, 'unit': 'K', 'label': 'Cooling air temperature difference in condenser (°C)'}
 )
 
 optimize.objective_value = optimize.model.get_net_power
-objectives_list = ['net power output']
+objectives_list = ['Net power output (MW)']
 params_list = list(optimize.params_to_opt.keys())
 
 result = {'champion': [], 'generation': []}
@@ -94,7 +94,7 @@ for gen in range(num_gen):
     individual = 0
     for objective in pop.get_f():
         for i in range(len(objective)):
-            individuals.loc[[(gen, individual)], objectives_list[i]] = objective[i]
+            individuals.loc[[(gen, individual)], objectives_list[i]] = -objective[i]/1e6
         individual += 1
 
     print()
@@ -116,7 +116,7 @@ for combination in combinations:
         data=individuals, x=combination[0], y=combination[1],
         xlabel=optimize.params_to_opt[combination[0]]['label'],
         ylabel=optimize.params_to_opt[combination[1]]['label'],
-        colormap=plt.cm.get_cmap('RdYlBu'), c=objectives_list[0])
+        colormap=plt.cm.get_cmap('RdYlBu_r'), c=objectives_list[0])
 
 # Create multipage PDF from plots
-shared.create_multipage_pdf('plots.pdf')
+shared.create_multipage_pdf('R245CA_multi_opt.pdf')

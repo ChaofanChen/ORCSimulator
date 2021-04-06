@@ -280,7 +280,7 @@ class PowerPlant():
 
         try:
             self.nw.solve('design')
-#            self.nw.print_results()
+            self.nw.print_results()
         except ValueError:
             self.nw.res = [1]
             pass
@@ -317,12 +317,15 @@ class PowerPlant():
 
     def get_p_before_turbine(self):
         return self.check_simulation(self.nw.get_conn('lsv_tur').p.val)
+    
+    def get_T_before_turbine(self):
+        return self.check_simulation(self.nw.get_conn('lsv_tur').T.val)
 
     def get_p_after_turbine(self):
         return self.check_simulation(self.nw.get_conn('tur_ihe').p.val)
     
-    def get_p_after_condenser(self):
-        return self.check_simulation(self.nw.get_conn('cond_fwp').p.val)
+    def get_T_after_condenser(self):
+        return self.check_simulation(self.nw.get_conn('cond_fwp').T.val)
 
     def get_T_after_turbine(self):
         return self.check_simulation(self.nw.get_conn('tur_ihe').T.val)

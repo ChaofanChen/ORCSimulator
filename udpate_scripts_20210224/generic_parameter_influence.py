@@ -61,7 +61,7 @@ for fluid in fluids:
     for Q in Q_range:
         PP.run_simulation(Q_brine_ev=Q, Q_ihe=0, T_air_hot=15)
 
-        sensitivity_analysis_without_ihe.loc[PP.get_p_before_turbine()] = [
+        sensitivity_analysis_without_ihe.loc[PP.get_T_before_turbine()] = [
             -PP.get_power(), PP.get_efficiency(), -PP.get_net_power(),
             PP.get_net_efficiency(), PP.get_T_reinjection(),
             PP.get_internal_heat_exchanger_heat(),
@@ -69,10 +69,10 @@ for fluid in fluids:
         ]
 
     print(sensitivity_analysis_without_ihe)
-    sensitivity_analysis_without_ihe.to_csv('diff_p_before_tur_' + fluid + '_without_ihe.csv')
+    sensitivity_analysis_without_ihe.to_csv('diff_T_before_tur_' + fluid + '_without_ihe.csv')
 
     geothermal_orc_design.plot_sensitivity_analysis(
         sensitivity_analysis_without_ihe,
         fn='with_working_fluid_of_' + fluid,
         y1='net_power', y2='net_efficiency',
-        y1_label='Net power output in MW', y2_label='Net efficiency in %', x_label='Turbine inlet pressure in bar')
+        y1_label='Net power output (MW)', y2_label='Net efficiency (%)', x_label='Turbine inlet temperature (°C)')
