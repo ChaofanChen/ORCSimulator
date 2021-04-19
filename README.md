@@ -13,7 +13,6 @@ MORE INFO TO FOLLOW
 ## Topology
 
 ![Alt flow diagram of the geothermal ORC](./flowdiagram.svg)
-<img src="./flowdiagram.svg">
 
 ## Reference
 
