@@ -1,0 +1,31 @@
+{
+	"working_fluid_list": ["R123"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1,
+		"IHE_sizing": 0,
+		"dT_air": 15
+	},
+	"variables": {
+		"T_before_tur": {
+			"max": 131,
+			"min": 50,
+			"tol": 1e-2,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T", "p", "s"],
+			"35": ["T"],
+			"2": ["T", "s"]
+		},
+		"components": {
+			"internal heat exchanger": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
+	},
+	"objective": "gross power output",
+	"num_gen": 20,
+	"num_ind": 5
+}
