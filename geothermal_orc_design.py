@@ -385,12 +385,15 @@ def _process_generation_data(pop, gen, individuals, params_list, objectives_list
 
     individual = 0
     for x in pop.get_x():
-        individuals.loc[(gen, individual), params_list] = x
+        for i in range(len(x)):
+            individuals.loc[[(gen, individual)], params_list[i]] = x[i]
+        # individuals.loc[(gen, individual), params_list] = x
         individual += 1
 
     individual = 0
     for objective in pop.get_f():
-        individuals.loc[(gen, individual), objectives_list + constraint_list] = objective
+        individuals.loc[[(gen, individual)], objectives_list + constraint_list] = objective
+        # individuals.loc[(gen, individual), objectives_list + constraint_list] = objective
         individual += 1
 
     individuals['valid'] = individuals[constraint_list] < 0
@@ -436,7 +439,7 @@ def multivariate_optimization(**input_data):
             print()
             print('Evolution: {}'.format(gen))
             for i in range(len(objectives_list)):
-                print(objectives_list[i] + ': {}'.format(round(pop.champion_f[i], 4)))
+                print(objectives_list[i] + ': {}'.format(round(-pop.champion_f[i]/1e6, 4)))
             for i in range(len(params_list)):
                 print(params_list[i] + ': {}'.format(round(pop.champion_x[i], 4)))
             pop = algo.evolve(pop)

@@ -1,0 +1,43 @@
+{
+	"working_fluid_list": ["R113"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1
+	},
+	"variables": {
+		"T_before_tur": {
+			"max": 132,
+			"min": 50,
+			"tol": 1e-2,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
+		},
+		"IHE_sizing": {
+			"max": 1,
+			"min": 0,
+			"tol": 1e-2,
+			"unit": "",
+			"label": "Internal heat exchanger size"
+		},
+		"dT_air": {
+			"max": 35,
+			"min": 5,
+			"tol": 1e-2,
+			"unit": "°C",
+			"label": "Condenser air temperature increase"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T", "p", "s"],
+			"35": ["T"],
+			"2": ["T", "s"]
+		},
+		"components": {
+			"internal heat exchanger": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
+	},
+	"objective": "net power output",
+	"num_gen": 20,
+	"num_ind": 5
+}

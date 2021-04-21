@@ -8,7 +8,9 @@ import json
 import sys
 
 
-with open(sys.argv[1], 'r') as f:
+cur_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
+
+with open(cur_dir + '/test.json', 'r') as f:
     input_data = json.load(f)
     f.close()
 
