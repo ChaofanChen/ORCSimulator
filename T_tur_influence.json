@@ -7,8 +7,9 @@
 	},
 	"variables": {
 		"T_before_tur": {
-			"max": 131,
+			"max": 130,
 			"min": 50,
+			"num_gen": 20,
 			"tol": 1e-3,
 			"unit": "°C",
 			"label": "Turbine inlet temperature"

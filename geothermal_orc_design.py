@@ -266,6 +266,7 @@ class PowerPlant():
 
         try:
             self.nw.solve('design')
+#            self.nw.print_results()
         except ValueError:
             self.nw.res = [1]
             pass
@@ -570,7 +571,7 @@ def single_parameter_influence(**input_data):
         result[fluid] = pd.DataFrame()
 
         for key, value in input_data['variables'].items():
-            for x in np.linspace(value['min'], value['max'], 11):
+            for x in np.linspace(value['min'], value['max'], value['num_gen']):
                 ORC.run_simulation(**input_data['boundary_conditions'], **{key: x})
 
                 for conn, param_list in input_data['result_data']['connections'].items():
