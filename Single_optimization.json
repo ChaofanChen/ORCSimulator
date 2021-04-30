@@ -1,18 +1,18 @@
 {
-	"working_fluid_list": ["R245CA"],
+	"working_fluid_list": ["R245CA", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
 		"IHE_sizing": 0,
 		"dT_air": 15
 	},
 	"variables": {
-		"Q_brine_ev": {
-			"max": -1e6,
-			"min": -3e7,
+		"T_before_tur": {
+			"max": 131,
+			"min": 50,
 			"num_gen": 20,
-			"tol": 1,
-			"unit": "W",
-			"label": "Brine evaporator heat exchange rate"
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
 		}
 	},
 	"result_data": {

@@ -1,0 +1,32 @@
+{
+	"working_fluid_list": ["R245fa", "R600"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1,
+		"T_before_tur": 131,
+		"dT_air": 15
+	},
+	"variables": {
+		"IHE_sizing": {
+			"max": 1,
+			"min": 0,
+			"num_gen": 20,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "IHE sizing factor"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T"],
+			"2": ["T", "p"],
+			"35": ["T"]
+		},
+		"components": {
+			"internal heat exchanger": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
+	},
+	"objective": "gross power output",
+	"num_gen": 20,
+	"num_ind": 5
+}

@@ -1,12 +1,12 @@
 {
-	"working_fluid_list": ["R113"],
+	"working_fluid_list": ["R245ca"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1
 	},
 	"variables": {
 		"T_before_tur": {
 			"max": 132,
-			"min": 50,
+			"min": 100,
 			"tol": 1e-2,
 			"unit": "°C",
 			"label": "Turbine inlet temperature"
@@ -38,6 +38,6 @@
 		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
 	},
 	"objective": "net power output",
-	"num_gen": 20,
+	"num_gen": 30,
 	"num_ind": 5
 }
