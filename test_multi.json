@@ -39,5 +39,5 @@
 	},
 	"objective": "net power output",
 	"num_gen": 30,
-	"num_ind": 5
+	"num_ind": 10
 }

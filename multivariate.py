@@ -5,7 +5,7 @@ from znes_plotting import plot, shared
 import pandas as pd
 import numpy as np
 import itertools
-
+from matplotlib.ticker import MaxNLocator
 import json
 import sys
 
@@ -28,22 +28,25 @@ for a in range(len(fluid)):
     Y=df['IHE_sizing']
     Z=df['dT_air']
     C=df['net power output']
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')  
-    p = ax.scatter(X, Y, Z, c=C, cmap=plt.cm.jet)
-    ax.set_xlabel('Turbine inlet emperature (°C)')
+    fig = plt.figure(figsize=(16, 12), dpi=100)
+    ax = fig.add_subplot(111, projection='3d') 
+    p = ax.scatter(X, Y, Z, c=C, cmap=plt.cm.jet, s=80)
+    ax.set_xlabel('Turbine inlet temperature (°C)')
     ax.set_ylabel('IHE sizing factor (-)')
     ax.set_zlabel('$\Delta T_{air}$ (°C)')
-    ax.yaxis.label.set_size(18)
-    ax.xaxis.label.set_size(18)
-    ax.zaxis.label.set_size(18)
-    ax.tick_params(axis="both", labelsize=15)
-    cbar = fig.colorbar(p, ax=ax)
-    cbar.set_label("Net power output (MW)", size=18)
-    cbar.ax.tick_params(labelsize=15)
-#    plt.show()
-    plt.savefig('Multivariate_optimization_' + fluid[a] + '.pdf')
+    ax.xaxis.labelpad=12
+    ax.yaxis.labelpad=12
+    ax.zaxis.labelpad=12
 
+    ax.yaxis.label.set_size(20)
+    ax.xaxis.label.set_size(20)
+    ax.zaxis.label.set_size(20)
+    ax.tick_params(axis="both", labelsize=18)
+    cbar = fig.colorbar(p, ax=ax)
+    cbar.set_label("Net power output (MW)", size=20)
+    cbar.ax.tick_params(labelsize=18)
+    plt.savefig('Multivariate_optimization_' + fluid[a] + '.pdf')
+    plt.show()
 
 #for fluid, data in result.items():
 #    combinations = list(itertools.combinations(input_data['variables'].keys(), 2))
