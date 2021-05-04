@@ -64,6 +64,7 @@ for a in range(len(fluid)):
     df = pd.DataFrame(list(result.values())[a])
     df['gross power output'] = -df['gross power output']/1e6
     df['net power output'] = -df['net power output']/1e6
+    df['Q_internal heat exchanger'] = -df['Q_internal heat exchanger']/1e6
 
     fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
     ax.plot(df['IHE sizing factor'], df['net power output'], color='blue', marker="o")
