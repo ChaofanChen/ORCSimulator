@@ -1,11 +1,11 @@
 {
-	"working_fluid_list": ["R245ca"],
+	"working_fluid_list": ["R245ca", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1
 	},
 	"variables": {
 		"T_before_tur": {
-			"max": 132,
+			"max": 131,
 			"min": 100,
 			"tol": 1e-2,
 			"unit": "°C",

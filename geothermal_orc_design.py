@@ -407,6 +407,7 @@ def multivariate_optimization(**input_data):
     fluid_list = input_data['working_fluid_list']
 
     result = {}
+    opt_results=pd.DataFrame(columns=['fluid', 'net_power', 'T_before_tur', 'dT_air'])
 
     for fluid in fluid_list:
         print('+' * 75)
@@ -449,6 +450,12 @@ def multivariate_optimization(**input_data):
         individuals = _process_generation_data(pop, gen, individuals, params_list, objectives_list, constraint_list)
 
         print()
+
+        data = {'fluid': fluid, 'net_power': [-pop.champion_f[0]/1e6], 'T_before_tur': [pop.champion_x[0]],
+                'dT_air': [pop.champion_x[2]]}
+        df_opt = pd.DataFrame(data)
+        opt_results = opt_results.append(df_opt)
+
         for i in range(len(objectives_list)):
             print(objectives_list[i] + ': {}'.format(round(pop.champion_f[i], 4)))
         for i in range(len(params_list)):
@@ -456,7 +463,7 @@ def multivariate_optimization(**input_data):
 
         result[fluid] = individuals
 
-    return result
+    return result, opt_results
 
 
 def _golden_ratio_search(function, get_param, a, b, tol=1e-5, direction='min', param_to_opt=None, func_params={}):

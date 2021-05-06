@@ -16,38 +16,65 @@ with open(cur_dir + '/test_multi.json', 'r') as f:
     input_data = json.load(f)
     f.close()
 
-result = multivariate_optimization(**input_data)
+opt_results = pd.DataFrame(columns=['fluid', 'net_power', 'T_before_tur', 'dT_air'])
 
-fluid=list(result.keys())
+result, opt_results = multivariate_optimization(**input_data)
 
-for a in range(len(fluid)):
-    df = pd.DataFrame(list(result.values())[a])
-    df['net power output'] = -df['net power output']/1e6
-    # Plot the surface.
-    X=df['T_before_tur']
-    Y=df['IHE_sizing']
-    Z=df['dT_air']
-    C=df['net power output']
-    fig = plt.figure(figsize=(16, 12), dpi=100)
-    ax = fig.add_subplot(111, projection='3d') 
-    p = ax.scatter(X, Y, Z, c=C, cmap=plt.cm.jet, s=80)
-    ax.set_xlabel('Turbine inlet temperature (°C)')
-    ax.set_ylabel('IHE sizing factor (-)')
-    ax.set_zlabel('$\Delta T_{air}$ (°C)')
-    ax.xaxis.labelpad=12
-    ax.yaxis.labelpad=12
-    ax.zaxis.labelpad=12
+print(opt_results.to_latex(escape=False, na_rep='-', float_format='%.2f'))
 
-    ax.yaxis.label.set_size(20)
-    ax.xaxis.label.set_size(20)
-    ax.zaxis.label.set_size(20)
-    ax.tick_params(axis="both", labelsize=18)
-    cbar = fig.colorbar(p, ax=ax)
-    cbar.set_label("Net power output (MW)", size=20)
-    cbar.ax.tick_params(labelsize=18)
-    plt.savefig('Multivariate_optimization_' + fluid[a] + '.pdf')
-    plt.show()
+fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+ax.plot(opt_results['fluid'], opt_results['net_power'], color='blue', marker="o")
+ax.set(xlabel= 'Working fluid', ylabel='Net power output (MW)')
+ax.yaxis.label.set_size(18)
+ax.xaxis.label.set_size(18)
+ax.tick_params(axis="x", labelsize=15)
+ax.tick_params(axis="y", labelsize=15)
+fig.autofmt_xdate()
+ax.grid(b=True, which='major')
+plt.savefig('diff_working_fluid_net_power.pdf')
+plt.show()
 
+#fluid=list(result.keys())
+#
+#for a in range(len(fluid)):
+#    df = pd.DataFrame(list(result.values())[a])
+#
+#    # Plot the surface.
+#    X=list(df['T_before_tur'])
+#    Y=list(df['IHE_sizing'])
+#    Z=list(df['dT_air'])
+#    C=list(df['net power output'])
+#
+##    from mpl_toolkits.mplot3d import Axes3D
+##    fig = plt.figure()
+##    ax = Axes3D(fig)
+##    surf = ax.plot_trisurf(X, Z, Y, cmap=plt.cm.jet)
+##    surf = ax.contour3D(X, Z, C, cmap=plt.cm.jet, linewidth=0.01)
+##    fig.colorbar(surf, shrink=0.5, aspect=5)
+##    plt.show()
+#
+#    fig = plt.figure(figsize=(16, 12), dpi=100)
+#    ax = fig.add_subplot(111, projection='3d')
+#    surf = ax.scatter(X, Z, C, c=C, cmap=plt.cm.jet, s=80)
+#    ax.set_xlabel('Turbine inlet temperature (°C)')
+#    ax.set_ylabel('$\Delta T_{air}$ (°C)')
+#    ax.set_zlabel('Net power output (MW)')
+#    ax.xaxis.labelpad=12
+#    ax.yaxis.labelpad=12
+#    ax.zaxis.labelpad=12
+#
+#    ax.yaxis.label.set_size(20)
+#    ax.xaxis.label.set_size(20)
+#    ax.zaxis.label.set_size(20)
+#    ax.tick_params(axis="both", labelsize=18)
+#    cbar = fig.colorbar(surf, ax=ax)
+#    cbar.set_label("Net power output (MW)", size=20)
+#    cbar.ax.tick_params(labelsize=18)
+#    plt.savefig('Multivariate_optimization_' + fluid[a] + '.pdf')
+#    plt.show()
+
+
+#%%
 #for fluid, data in result.items():
 #    combinations = list(itertools.combinations(input_data['variables'].keys(), 2))
 #
