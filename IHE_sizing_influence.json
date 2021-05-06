@@ -1,8 +1,8 @@
 {
-	"working_fluid_list": ["R245fa", "R600"],
+	"working_fluid_list": ["Isopentane"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
-		"T_before_tur": 131,
+		"T_before_tur": 115.29,
 		"dT_air": 15
 	},
 	"variables": {
