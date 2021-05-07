@@ -89,6 +89,92 @@ for a in range(len(fluid)):
     df.to_csv('IHE_sizing_with_' + fluid[a] + '.csv')
 
 
+#%%
+
+cur_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
+
+with open(cur_dir + '/T_cond_influence.json', 'r') as f:
+    input_data = json.load(f)
+    f.close()
+
+result = single_parameter_influence(**input_data)
+
+print(result)
+
+## plot figures
+fluid=list(result.keys())
+
+for a in range(len(fluid)):
+    df = pd.DataFrame(list(result.values())[a])
+    df['gross power output'] = -df['gross power output']/1e6
+    df['net power output'] = -df['net power output']/1e6
+    df['net efficiency'] = df['net efficiency'] * 100
+
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    ax.plot(df['T_4'], df['net power output'], color='blue', marker="o")
+    ax.set(xlabel= 'Condenser outlet temperature with ' + fluid[a] + ' (°C)', ylabel='Net power output (MW)')
+    plt.ylim(5, 14)
+    ax2=ax.twinx()
+    ax2.plot(df['T_4'], df['net efficiency'], color='black', marker="*", label='Net efficiency (%)')
+    ax2.set(ylabel='Net efficiency (%)')
+    plt.ylim(0, 14)
+    plt.xlim(20, 45)
+    ax.yaxis.label.set_color('blue')
+    ax.yaxis.label.set_size(18)
+    ax.xaxis.label.set_size(18)
+    ax.tick_params(axis="x", labelsize=15)
+    ax.tick_params(axis="y", labelsize=15)
+    ax.tick_params(axis='y', colors='blue')
+    ax2.yaxis.label.set_size(18)
+    ax2.tick_params(axis="y", labelsize=15)
+    ax.grid()
+    plt.savefig('T_cond_with_' + fluid[a] + '.pdf')
+
+#%%
+
+cur_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
+
+with open(cur_dir + '/Low_geo_steam.json', 'r') as f:
+    input_data = json.load(f)
+    f.close()
+
+result = single_parameter_influence(**input_data)
+
+print(result)
+
+### plot figures
+fluid=list(result.keys())
+
+for a in range(len(fluid)):
+    df = pd.DataFrame(list(result.values())[a])
+    df['gross power output'] = -df['gross power output']/1e6
+    df['net power output'] = -df['net power output']/1e6
+
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    ax.plot(df['T_1'], df['gross power output'], color='r', marker="o", label='Gross power output')
+    ax.plot(df['T_1'], df['net power output'], color='blue', marker="v", label='Net power output')
+    ax.set(xlabel= 'Turbine inlet temperature with ' + fluid[a] + ' (°C)', ylabel='Power output (MW)')
+    plt.ylim(0, 12)
+    ax2=ax.twinx()
+    ax2.plot(df['T_1'], df['T_35'], color='black', marker="*", label='Re-injection temperature')
+    ax2.set(ylabel='Re-injection temperature (°C)')
+    plt.ylim(40, 110)
+    plt.xlim(50, 130)
+    ax.yaxis.label.set_color('blue')
+    ax.yaxis.label.set_size(18)
+    ax.xaxis.label.set_size(18)
+    ax.tick_params(axis="x", labelsize=15)
+    ax.tick_params(axis="y", labelsize=15)
+    ax.tick_params(axis='y', colors='blue')
+    ax2.yaxis.label.set_size(18)
+    ax2.tick_params(axis="y", labelsize=15)
+    ax.grid()
+    ax.legend()
+    plt.savefig('Low_geo_steam_' + fluid[a] + '.pdf')
+    df.to_csv('Low_geo_steam_' + fluid[a] + '.csv')
+
+
+
 
 #%%
 #cur_dir = sys.argv[1] if len(sys.argv) > 1 else '.'

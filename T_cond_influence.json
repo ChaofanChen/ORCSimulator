@@ -1,0 +1,32 @@
+{
+	"working_fluid_list": ["R245CA", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1,
+		"IHE_sizing": 1,
+		"T_before_tur": 114
+	},
+	"variables": {
+		"dT_air": {
+			"max": 5,
+			"min": 30,
+			"num_gen": 20,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "Condenser outlet temperature"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"4": ["T"],
+			"2": ["T", "p"],
+			"35": ["T"]
+		},
+		"components": {
+			"geobrine evaporator": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency"]
+	},
+	"objective": "net power output",
+	"num_gen": 20,
+	"num_ind": 5
+}

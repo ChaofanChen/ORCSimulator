@@ -20,19 +20,22 @@ opt_results = pd.DataFrame(columns=['fluid', 'net_power', 'T_before_tur', 'dT_ai
 
 result, opt_results = multivariate_optimization(**input_data)
 
-print(opt_results.to_latex(escape=False, na_rep='-', float_format='%.2f'))
-
 fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-ax.plot(opt_results['fluid'], opt_results['net_power'], color='blue', marker="o")
+ax.plot(opt_results['fluid'], opt_results['net_power'], color='blue', marker="o", linewidth=2)
 ax.set(xlabel= 'Working fluid', ylabel='Net power output (MW)')
 ax.yaxis.label.set_size(18)
 ax.xaxis.label.set_size(18)
-ax.tick_params(axis="x", labelsize=15)
-ax.tick_params(axis="y", labelsize=15)
+ax.tick_params(axis="x", labelsize=15, width=0.5)
+ax.tick_params(axis="y", labelsize=15, width=0.5)
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(1)
 fig.autofmt_xdate()
-ax.grid(b=True, which='major')
+ax.grid(b=True, which='major', linewidth=0.5)
 plt.savefig('diff_working_fluid_net_power.pdf')
 plt.show()
+
+print(opt_results.to_latex(escape=False, na_rep='-', float_format='%.2f'))
+
 
 #fluid=list(result.keys())
 #
