@@ -1,0 +1,41 @@
+{
+	"working_fluid_list": ["R245ca"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1,
+		"IHE_sizing": 1,
+		"dT_air": 15
+	},
+	"variables": {
+		"T_before_tur": {
+			"max": 117.58,
+			"min": 117.58,
+			"num_gen": 1,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T", "s"],
+			"2": ["T", "s"],
+			"3": ["T", "s"],
+			"4": ["T", "s"],
+			"5": ["T", "s"],
+			"6": ["T", "s"],
+			"7": ["T", "s"],
+			"35": ["T", "s"],
+			"30": ["T", "s"],
+			"32": ["T", "s"],
+			"20": ["T", "s"],
+			"22": ["T", "s"]
+		},
+		"components": {
+			"geobrine evaporator": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency"]
+	},
+	"objective": "gross power output",
+	"num_gen": 20,
+	"num_ind": 5
+}
