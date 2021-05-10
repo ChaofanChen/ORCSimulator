@@ -21,10 +21,13 @@ opt_results = pd.DataFrame(columns=['fluid', 'net_power', 'T_before_tur', 'dT_ai
 result, opt_results = multivariate_optimization(**input_data)
 
 fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-ax.plot(opt_results['fluid'], opt_results['net_power'], color='blue', marker="o", linewidth=2)
+ax.bar(opt_results['fluid'], opt_results['net_power'], color='blue', width=0.4)#, marker="o", linewidth=2
+for i, v in enumerate(np.array(opt_results['net_power'])):
+    ax.text(i - 0.25, v + 0.1, str(round(v, 2)), color='black', fontweight='bold', fontsize=12)
 ax.set(xlabel= 'Working fluid', ylabel='Net power output (MW)')
 ax.yaxis.label.set_size(18)
 ax.xaxis.label.set_size(18)
+plt.ylim(10, 13)
 ax.tick_params(axis="x", labelsize=15, width=0.5)
 ax.tick_params(axis="y", labelsize=15, width=0.5)
 for axis in ['top','bottom','left','right']:
