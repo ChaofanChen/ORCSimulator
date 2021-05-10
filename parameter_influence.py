@@ -153,7 +153,7 @@ for a in range(len(fluid)):
     df['net power output'] = -df['net power output']/1e6
 
     fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-    ax.plot(df['T_1'], df['gross power output'], color='r', marker="o", label='Gross power output')
+    ax.plot(df['T_1'], df['gross power output'], color='blue', marker="o", label='Gross power output')
     ax.plot(df['T_1'], df['net power output'], color='blue', marker="v", label='Net power output')
     ax.set(xlabel= 'Turbine inlet temperature with ' + fluid[a] + ' (°C)', ylabel='Power output (MW)')
     plt.ylim(0, 12)
@@ -171,7 +171,7 @@ for a in range(len(fluid)):
     ax2.yaxis.label.set_size(18)
     ax2.tick_params(axis="y", labelsize=15)
     ax.grid()
-    ax.legend()
+    ax.legend(frameon=False, prop={'size': 12})
     plt.savefig('Low_geo_steam_' + fluid[a] + '.pdf')
     df.to_csv('Low_geo_steam_' + fluid[a] + '.csv')
 
@@ -233,7 +233,7 @@ for T in T_range_condenser:
     df_data.loc[T, 's_iso_P_bottom'] = PSI('S', 'T', T, 'P', P0, fluid)
 #print(df)
 
-fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+fig, ax = plt.subplots(figsize=(8, 6), dpi=300)
 ax.plot(df_data['s_g'], df_data.index - 273.15, color='black')
 ax.plot(df_data['s_l'], df_data.index - 273.15, color='black')
 ax.plot(df_data['s_iso_P0'], df_data.index - 273.15, color='green')
@@ -255,12 +255,12 @@ for i in range(0, 2, 1):
 for i in range(4, 6, 1):
     plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
 
-# geo-source
-ax.scatter(df['s_30'] * 0.1 + df['s_32'] * 0.9, df['T_30'])
-ax.scatter(df['s_35'], df['T_35'])
-# cooling air
-ax.scatter(df['s_20'], df['T_20'])
-ax.scatter(df['s_22'], df['T_22'])
+## geo-source
+#ax.scatter(df['s_30'] * 0.1 + df['s_32'] * 0.9, df['T_30'])
+#ax.scatter(df['s_35'], df['T_35'])
+## cooling air
+#ax.scatter(df['s_20'], df['T_20'])
+#ax.scatter(df['s_22'], df['T_22'])
 
 plt.ylim(0, 180)
 ax.set(xlabel='Specific entropy (J/kg K)', ylabel='Temperature (°C)')
@@ -272,6 +272,46 @@ ax.grid()
 plt.savefig('ORC_Ts_plot_' + fluid + '.pdf')
 plt.show()
 
+#%%
+
+cur_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
+
+with open(cur_dir + '/IHE_install.json', 'r') as f:
+    input_data = json.load(f)
+    f.close()
+
+result = single_parameter_influence(**input_data)
+
+### plot figures
+fluid=list(result.keys())
+
+for a in range(len(fluid)):
+    df = pd.DataFrame(list(result.values())[a])
+    df['gross power output'] = -df['gross power output']/1e6
+    df['net power output'] = -df['net power output']/1e6
+    df['Q_internal heat exchanger'] = -df['Q_internal heat exchanger']/1e6
+
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    ax.plot(df['T_1'], df['net power output'], color='blue', marker="v", label='Net power output')
+    ax.set(xlabel= 'Turbine inlet temperature with ' + fluid[a] + ' (°C)', ylabel='Net power output (MW)')
+    plt.ylim(12, 13)
+    ax2=ax.twinx()
+    ax2.plot(df['T_1'], df['Q_internal heat exchanger'], color='black', marker="*", label='Q_internal heat exchanger')
+    ax2.set(ylabel='Required IHE heat exchange rate (MW)')
+    plt.ylim(5.5, 8)
+    plt.xlim(125, 131)
+    ax.yaxis.label.set_color('blue')
+    ax.yaxis.label.set_size(18)
+    ax.xaxis.label.set_size(18)
+    ax.tick_params(axis="x", labelsize=15)
+    ax.tick_params(axis="y", labelsize=15)
+    ax.tick_params(axis='y', colors='blue')
+    ax2.yaxis.label.set_size(18)
+    ax2.tick_params(axis="y", labelsize=15)
+    ax.grid()
+#    ax.legend()
+    plt.savefig('IHE_install' + fluid[a] + '.pdf')
+    df.to_csv('IHE_install_' + fluid[a] + '.csv')
 
 
 #%%
