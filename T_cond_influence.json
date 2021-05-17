@@ -1,5 +1,5 @@
 {
-	"working_fluid_list": ["R245CA", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
+	"working_fluid_list": ["R245ca", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
 		"IHE_sizing": 1,
@@ -7,8 +7,8 @@
 	},
 	"variables": {
 		"dT_air": {
-			"max": 5,
-			"min": 30,
+			"max": 30,
+			"min": 5,
 			"num_gen": 20,
 			"tol": 1e-3,
 			"unit": "°C",
