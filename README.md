@@ -25,31 +25,31 @@ The table below highlights the design parameters of the system.
 
 | Item                | Parameter            | Symbol                  | Value | Unit  |
 |:--------------------|:---------------------|:------------------------|:------|:------|
-| Geothermal resource | Steam temperature    | *T*<sub>*g**s*</sub>    | 140   |  °C   |
-|                     | Steam mass flow rate | *ṁ*<sub>*g**s*</sub>    | 180   |  kg/s |
-|                     | Brine temperature    | *T*<sub>*g**b*</sub>    | 140   |  °C   |
-|                     | Brine mass flow rate | *ṁ*<sub>*g**b*</sub>    | 20    |  kg/s |
+| Geothermal resource | Steam temperature    | *T*<sub>gs</sub>    | 140   |  °C   |
+|                     | Steam mass flow rate | *ṁ*<sub>gs</sub>    | 180   |  kg/s |
+|                     | Brine temperature    | *T*<sub>gb</sub>    | 140   |  °C   |
+|                     | Brine mass flow rate | *ṁ*<sub>gb</sub>    | 20    |  kg/s |
 |                     | Steam mass fraction  | *x*                     | 0.1   | \-    |
-|                     | Brine/steam pressure | *p*<sub>*g**e**o*</sub> | 3.615 | bar   |
-| Ambient condition   | Average temperature  | *T*<sub>*a**m*</sub>    | 5     |  °C   |
-|                     | Average pressure     | *p*<sub>*a**m*</sub>    | 0.6   |  bar  |
+|                     | Brine/steam pressure | *p*<sub>geo</sub> | 3.615 | bar   |
+| Ambient condition   | Average temperature  | *T*<sub>am</sub>    | 5     |  °C   |
+|                     | Average pressure     | *p*<sub>am</sub>    | 0.6   |  bar  |
 
 | Location             | Parameter                             | Symbol                 | Value | Unit |
 |:---------------------|:--------------------------------------|:-----------------------|------:|:----:|
 | Turbine              | Isentropic efficiency                 | *η*<sub>s, t</sub>     |    90 |  %   |
 | Feed pump            | Isentropic efficiency                 | *η*<sub>s, fp</sub>    |    75 |  %   |
 | Air fan              | Isentropic efficiency                 | *η*<sub>s, af</sub>    |    60 |  %   |
-| Main condenser       | Upper terminal temperature difference | *Δ**T*<sub>t, u</sub>  |    10 |  °C  |
-|                      | Pressure ratio on hot side            | *p**r*<sub>1</sub>     |     1 |  \-  |
-|                      | Pressure ratio on cold side           | *p**r*<sub>2</sub>     | 0.995 |  \-  |
-| Geo-steam evaporator | Pressure ratio on hot side            | *p**r*<sub>1</sub>     |     1 |  \-  |
-|                      | Pressure ratio on cold side           | *p**r*<sub>2</sub>     |     1 |  \-  |
-| Geo-brine evaporator | Pinch point temperature difference    | *Δ**T*<sub>pp</sub>    |     8 |  °C  |
-|                      | Pressure ratio on hot side            | *p**r*<sub>1</sub>     |  0.98 |  \-  |
-|                      | Pressure ratio on cold side           | *p**r*<sub>2</sub>     |     1 |  \-  |
-| IHE & preheater      | Pressure ratio on hot side            | *p**r*<sub>1</sub>     |  0.98 |  \-  |
-|                      | Pressure ratio on cold side           | *p**r*<sub>2</sub>     |  0.98 |  \-  |
-| Preheater outlet     | Approach point temperature difference | *Δ**T*<sub>ap</sub>    |     2 |  °C  |
+| Main condenser       | Upper terminal temperature difference | *ΔT*<sub>t, u</sub>  |    10 |  °C  |
+|                      | Pressure ratio on hot side            | *pr*<sub>1</sub>     |     1 |  \-  |
+|                      | Pressure ratio on cold side           | *pr*<sub>2</sub>     | 0.995 |  \-  |
+| Geo-steam evaporator | Pressure ratio on hot side            | *pr*<sub>1</sub>     |     1 |  \-  |
+|                      | Pressure ratio on cold side           | *pr*<sub>2</sub>     |     1 |  \-  |
+| Geo-brine evaporator | Pinch point temperature difference    | *ΔT*<sub>pp</sub>    |     8 |  °C  |
+|                      | Pressure ratio on hot side            | *pr*<sub>1</sub>     |  0.98 |  \-  |
+|                      | Pressure ratio on cold side           | *pr*<sub>2</sub>     |     1 |  \-  |
+| IHE & preheater      | Pressure ratio on hot side            | *pr*<sub>1</sub>     |  0.98 |  \-  |
+|                      | Pressure ratio on cold side           | *pr*<sub>2</sub>     |  0.98 |  \-  |
+| Preheater outlet     | Approach point temperature difference | *ΔT*<sub>ap</sub>    |     2 |  °C  |
 | Generator            | Efficiency                            | *η*<sub>el, mech</sub> |    97 |  %   |
 | Motors               | Efficiency                            | *η*<sub>el, mech</sub> |    97 |  %   |
 
