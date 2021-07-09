@@ -1,4 +1,5 @@
 {
+	"scenario": "multivariate",
 	"working_fluid_list": ["R245ca", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1
@@ -37,6 +38,7 @@
 		},
 		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
 	},
+	"save_result": true,
 	"objective": "net power output",
 	"num_gen": 30,
 	"num_ind": 10

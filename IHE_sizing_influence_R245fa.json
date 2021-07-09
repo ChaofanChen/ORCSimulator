@@ -1,15 +1,16 @@
 {
-	"working_fluid_list": ["Isopentane"],
+	"scenario": "IHE_sizing_R245fa",
+	"working_fluid_list": ["R245fa"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
-		"T_before_tur": 115.29,
+		"T_before_tur": 131.0,
 		"dT_air": 15
 	},
 	"variables": {
 		"IHE_sizing": {
 			"max": 1,
 			"min": 0,
-			"num_gen": 20,
+			"num": 20,
 			"tol": 1e-3,
 			"unit": "°C",
 			"label": "IHE sizing factor"
@@ -26,7 +27,5 @@
 		},
 		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
 	},
-	"objective": "gross power output",
-	"num_gen": 20,
-	"num_ind": 5
+	"save_result": true
 }

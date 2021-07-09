@@ -15,6 +15,8 @@ import numpy as np
 import pygmo as pg
 import pandas as pd
 
+import os
+
 
 def desuperheat(ude):
     ttd_min = ude.params['ttd_min']
@@ -104,55 +106,55 @@ class PowerPlant():
         self.nw.add_busses(net_power, ORC_power_bus, geothermal_bus)
 
         # turbine to condenser
-        ls_in = Connection(orc_cc, 'out1', tur, 'in1', label='1')
-        tur_ihe = Connection(tur, 'out1', ihe, 'in1', label='2')
-        ihe_cond = Connection(ihe, 'out1', air_cond, 'in1', label='3')
-        self.nw.add_conns(ls_in, tur_ihe, ihe_cond)
+        c1 = Connection(orc_cc, 'out1', tur, 'in1', label='1')
+        c2 = Connection(tur, 'out1', ihe, 'in1', label='2')
+        c3 = Connection(ihe, 'out1', air_cond, 'in1', label='3')
+        self.nw.add_conns(c1, c2, c3)
 
         # condenser to steam generator
-        cond_fwp = Connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='4')
-        fwp_ihe = Connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='5')
-        self.nw.add_conns(cond_fwp, fwp_ihe)
+        c4 = Connection(air_cond, 'out1', feed_working_fluid_pump, 'in1', label='4')
+        c5 = Connection(feed_working_fluid_pump, 'out1', ihe, 'in2', label='5')
+        self.nw.add_conns(c4, c5)
 
         # steam generator
-        ihe_pre = Connection(ihe, 'out2', pre, 'in2', label='6')
-        pre_dr = Connection(pre, 'out2', dr, 'in1', label='7')
-        dr_esp = Connection(dr, 'out1', evap_splitter, 'in1', label='8')
-        esp_es = Connection(evap_splitter, 'out2', evap_steam, 'in2', label='9')
-        es_em = Connection(evap_steam, 'out2', evap_merge, 'in2', label='10')
-        esp_eb = Connection(evap_splitter, 'out1', evap_brine, 'in2', label='11')
-        eb_em = Connection(evap_brine, 'out2', evap_merge, 'in1', label='12')
-        em_dr = Connection(evap_merge, 'out1', dr, 'in2', label='13')
-        ls_out = Connection(dr, 'out2', orc_cc, 'in1', label='1_closing')
-        self.nw.add_conns(ihe_pre, pre_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
+        c6 = Connection(ihe, 'out2', pre, 'in2', label='6')
+        c7 = Connection(pre, 'out2', dr, 'in1', label='7')
+        c8 = Connection(dr, 'out1', evap_splitter, 'in1', label='8')
+        c9 = Connection(evap_splitter, 'out2', evap_steam, 'in2', label='9')
+        c10 = Connection(evap_steam, 'out2', evap_merge, 'in2', label='10')
+        c11 = Connection(evap_splitter, 'out1', evap_brine, 'in2', label='11')
+        c12 = Connection(evap_brine, 'out2', evap_merge, 'in1', label='12')
+        c13 = Connection(evap_merge, 'out1', dr, 'in2', label='13')
+        c0 = Connection(dr, 'out2', orc_cc, 'in1', label='0')
+        self.nw.add_conns(c6, c7, c8, c11, c9, c12, c10, c13, c0)
 
         # condenser cold side
-        air_in_fan = Connection(air_in, 'out1', air_fan, 'in1', label='20')
-        fan_cond = Connection(air_fan, 'out1', air_cond, 'in2', label='21')
-        cond_air_hot = Connection(air_cond, 'out2', air_out, 'in1', label='22')
-        self.nw.add_conns(air_in_fan, fan_cond, cond_air_hot)
+        c20 = Connection(air_in, 'out1', air_fan, 'in1', label='20')
+        c21 = Connection(air_fan, 'out1', air_cond, 'in2', label='21')
+        c22 = Connection(air_cond, 'out2', air_out, 'in1', label='22')
+        self.nw.add_conns(c20, c21, c22)
 
         # geo source
-        gs_es = Connection(geo_steam, 'out1', evap_steam, 'in1', label='30')
-        es_gm = Connection(evap_steam, 'out1',  geo_merge, 'in1', label='31')
-        gb_gm = Connection(geo_brine, 'out1', geo_merge, 'in2', label='32')
-        gm_eb = Connection(geo_merge, 'out1', evap_brine, 'in1', label='33')
-        self.nw.add_conns(gs_es, es_gm, gb_gm, gm_eb)
+        c30 = Connection(geo_steam, 'out1', evap_steam, 'in1', label='30')
+        c31 = Connection(evap_steam, 'out1',  geo_merge, 'in1', label='31')
+        c32 = Connection(geo_brine, 'out1', geo_merge, 'in2', label='32')
+        c33 = Connection(geo_merge, 'out1', evap_brine, 'in1', label='33')
+        self.nw.add_conns(c30, c31, c32, c33)
 
-        eb_pre = Connection(evap_brine, 'out1', pre, 'in1', label='34')
-        pre_gr = Connection(pre, 'out1', geo_reinjection, 'in1', label='35')
-        self.nw.add_conns(eb_pre, pre_gr)
+        c34 = Connection(evap_brine, 'out1', pre, 'in1', label='34')
+        c35 = Connection(pre, 'out1', geo_reinjection, 'in1', label='35')
+        self.nw.add_conns(c34, c35)
 
         # generate a set of stable starting values of every working fluid
         # fluid settings
-        ihe_pre.set_attr(fluid={self.working_fluid: 1.0, 'air': 0.0, 'water': 0.0})
-        air_in_fan.set_attr(fluid={self.working_fluid: 0.0, 'air': 1.0, 'water': 0.0})
-        gs_es.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
-        gb_gm.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
+        c6.set_attr(fluid={self.working_fluid: 1.0, 'air': 0.0, 'water': 0.0})
+        c20.set_attr(fluid={self.working_fluid: 0.0, 'air': 1.0, 'water': 0.0})
+        c30.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
+        c32.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
 
         # connection parameters
         p0 = PSI('P', 'T', self.T_brine_in + 273.15, 'Q', 1, self.working_fluid)
-        ls_in.set_attr(p0=p0 / 1e5)
+        c1.set_attr(p0=p0 / 1e5)
         ws_stable_h0 = (
             PSI('H', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid) +
             0.5 * (
@@ -160,29 +162,29 @@ class PowerPlant():
                 PSI('H', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid)
             )
         ) / 1e3
-        tur_ihe.set_attr(h=ws_stable_h0)
+        c2.set_attr(h=ws_stable_h0)
         p0 = PSI('P', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid)
-        ihe_cond.set_attr(Td_bp=5, design=['Td_bp'], p0=p0 / 1e5)
-        fwp_ihe.set_attr(h=Ref(cond_fwp, 1, 1))
+        c3.set_attr(Td_bp=5, design=['Td_bp'], p0=p0 / 1e5)
+        c5.set_attr(h=Ref(c4, 1, 1))
 
         # steam generator
-        gs_es.set_attr(
+        c30.set_attr(
             m=self.geo_mass_flow * geo_steam_share,
             T=self.T_brine_in, x=1, p0=5)
-        gb_gm.set_attr(
+        c32.set_attr(
             m=self.geo_mass_flow * (1 - geo_steam_share),
             T=self.T_brine_in, x=0)
 
-        em_dr.set_attr()
-        eb_em.set_attr(x=0.5)
-        es_em.set_attr(x=0.5, design=['x'])
-        eb_pre.set_attr(h=Ref(gm_eb, 1, -50))
+        c13.set_attr()
+        c12.set_attr(x=0.5)
+        c10.set_attr(x=0.5, design=['x'])
+        c34.set_attr(h=Ref(c33, 1, -50))
 
-        pre_dr.set_attr(Td_bp=-2)
+        c7.set_attr(Td_bp=-2)
 
         # main condenser
-        air_in_fan.set_attr(p=self.p_amb, T=self.T_amb)
-        cond_air_hot.set_attr(T=self.T_amb + 15, p=self.p_amb)
+        c20.set_attr(p=self.p_amb, T=self.T_amb)
+        c22.set_attr(T=self.T_amb + 15, p=self.p_amb)
 
         # component parameters
         # condensing
@@ -197,19 +199,26 @@ class PowerPlant():
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
         self.nw.save('stable_' + self.working_fluid)
+
+        # specify actual parameters
         tur.set_attr(eta_s=0.9)
         feed_working_fluid_pump.set_attr(eta_s=0.75)
-        tur_ihe.set_attr(h=None)
-        fwp_ihe.set_attr(h=None)
-        eb_pre.set_attr(h=None, T=Ref(gm_eb, 1, -10))
+        c2.set_attr(h=None)
+        c5.set_attr(h=None)
+        c34.set_attr(h=None, T=Ref(c33, 1, -10))
 
         self.nw.solve('design')
-        cond_air_hot.set_attr(T=None)
-        ihe_cond.set_attr(Td_bp=None)
+        c22.set_attr(T=None)
+        c3.set_attr(Td_bp=None)
 
         self.ude_IHE_size = UserDefinedEquation(
             label='ihe deshuperheat ratio',
             func=desuperheat, deriv=desuperheat_deriv,
+            latex={
+                'equation':
+                    r'0 = h_3 - h_2 - x_\mathrm{IHE} \cdot \left(h_3 -'
+                    r'h\left(p_2, T_5 + \Delta T_\mathrm{t,u,min} \right)'
+                    r'\right)'},
             conns=[
                 self.nw.get_conn('2'),
                 self.nw.get_conn('3'),
@@ -316,11 +325,13 @@ class PowerPlant():
 
     def get_connection_param(self, conn, param):
         """Return a connection parameter."""
-        return self.check_simulation(self.nw.get_conn(conn).get_attr(param).val)
+        return self.check_simulation(
+            self.nw.get_conn(conn).get_attr(param).val)
 
     def get_component_param(self, comp, param):
         """Return a component parameter."""
-        return self.check_simulation(self.nw.get_comp(comp).get_attr(param).val)
+        return self.check_simulation(
+            self.nw.get_comp(comp).get_attr(param).val)
 
     def get_misc_param(self, param):
         """Get non component or connection parameters."""
@@ -378,11 +389,15 @@ class _MultivariateOptimizationProblem():
     def get_bounds(self):
         """Return bounds of decision variables."""
         return (
-            [self.params_to_opt[param]['min'] for param in self.params_to_opt.keys()],
-            [self.params_to_opt[param]['max'] for param in self.params_to_opt.keys()])
+            [self.params_to_opt[param]['min']
+             for param in self.params_to_opt.keys()],
+            [self.params_to_opt[param]['max']
+             for param in self.params_to_opt.keys()])
 
 
-def _process_generation_data(pop, gen, individuals, params_list, objectives_list, constraint_list):
+def _process_generation_data(
+        pop, gen, individuals, params_list, objectives_list,
+        constraint_list):
 
     individual = 0
     for x in pop.get_x():
@@ -393,8 +408,8 @@ def _process_generation_data(pop, gen, individuals, params_list, objectives_list
 
     individual = 0
     for objective in pop.get_f():
-        individuals.loc[[(gen, individual)], objectives_list + constraint_list] = objective
-        # individuals.loc[(gen, individual), objectives_list + constraint_list] = objective
+        individuals.loc[
+            [(gen, individual)], objectives_list + constraint_list] = objective
         individual += 1
 
     individuals['valid'] = individuals[constraint_list] < 0
@@ -407,7 +422,8 @@ def multivariate_optimization(**input_data):
     fluid_list = input_data['working_fluid_list']
 
     result = {}
-    opt_results=pd.DataFrame(columns=['fluid', 'net_power', 'T_before_tur', 'dT_air'])
+
+    opt_results = pd.DataFrame()
 
     for fluid in fluid_list:
         print('+' * 75)
@@ -420,7 +436,8 @@ def multivariate_optimization(**input_data):
         optimize.params_to_opt = OrderedDict(input_data['variables'])
         optimize.boundary_conditions = input_data['boundary_conditions']
 
-        optimize.objective = optimize.model.get_objective_func(input_data['objective'])
+        optimize.objective = optimize.model.get_objective_func(
+            input_data['objective'])
         objectives_list = [input_data['objective']]
         constraint_list = ['constraints']
         params_list = list(optimize.params_to_opt.keys())
@@ -434,39 +451,69 @@ def multivariate_optimization(**input_data):
 
         individuals = pd.DataFrame(
             columns=params_list + objectives_list + constraint_list,
-            index=[(gen, ind) for gen in range(num_gen) for ind in range(num_ind)])
+            index=[(gen, ind) for gen in range(num_gen)
+                   for ind in range(num_ind)])
 
+        gen = 0
         for gen in range(num_gen - 1):
-            individuals = _process_generation_data(pop, gen, individuals, params_list, objectives_list, constraint_list)
+            individuals = _process_generation_data(
+                pop, gen, individuals, params_list, objectives_list,
+                constraint_list)
             print()
             print('Evolution: {}'.format(gen))
             for i in range(len(objectives_list)):
-                print(objectives_list[i] + ': {}'.format(round(-pop.champion_f[i]/1e6, 4)))
+                print(objectives_list[i] +
+                      ': {}'.format(round(-pop.champion_f[i]/1e6, 4)))
             for i in range(len(params_list)):
-                print(params_list[i] + ': {}'.format(round(pop.champion_x[i], 4)))
+                print(params_list[i] +
+                      ': {}'.format(round(pop.champion_x[i], 4)))
             pop = algo.evolve(pop)
 
         gen += 1
-        individuals = _process_generation_data(pop, gen, individuals, params_list, objectives_list, constraint_list)
+        individuals = _process_generation_data(
+            pop, gen, individuals, params_list, objectives_list,
+            constraint_list)
 
         print()
 
-        data = {'fluid': fluid, 'net_power': [-pop.champion_f[0]/1e6], 'T_before_tur': [pop.champion_x[0]],
-                'dT_air': [pop.champion_x[2]]}
-        df_opt = pd.DataFrame(data)
-        opt_results = opt_results.append(df_opt)
+        optimize.fitness(pop.champion_x)
 
+        for conn, param_list in input_data['result_data']['connections'].items():
+            for param in param_list:
+                opt_results.loc[fluid, param + '_' + conn] = optimize.model.get_connection_param(conn, param)
+        for comp, param_list in input_data['result_data']['components'].items():
+            for param in param_list:
+                opt_results.loc[fluid, param + '_' + comp] = optimize.model.get_component_param(comp, param)
+
+        for param in input_data['result_data']['misc']:
+            opt_results.loc[fluid, param] = optimize.model.get_misc_param(param)
+
+        print('Final evolution: {}'.format(gen))
         for i in range(len(objectives_list)):
-            print(objectives_list[i] + ': {}'.format(round(pop.champion_f[i], 4)))
+            print(objectives_list[i] +
+                  ': {}'.format(round(pop.champion_f[i], 4)))
         for i in range(len(params_list)):
-            print(params_list[i] + ': {}'.format(round(pop.champion_x[i], 4)))
+            print(params_list[i] +
+                  ': {}'.format(round(pop.champion_x[i], 4)))
+
+        print()
 
         result[fluid] = individuals
+
+    if input_data['save_result']:
+        if not os.path.isdir(input_data['scenario']):
+            os.mkdir('./' + input_data['scenario'])
+        for fluid in fluid_list:
+            result[fluid].to_csv(input_data['scenario'] + '/' + fluid + '.csv')
+
+        opt_results.to_csv(input_data['scenario'] + '/champion_data.csv')
 
     return result, opt_results
 
 
-def _golden_ratio_search(function, get_param, a, b, tol=1e-5, direction='min', param_to_opt=None, func_params={}):
+def _golden_ratio_search(
+        function, get_param, a, b, tol=1e-5, direction='min',
+        param_to_opt=None, func_params={}):
     """Golden ratio search"""
 
     invphi = (5 ** 0.5 - 1) / 2  # 1 / phi
@@ -561,6 +608,12 @@ def single_optimization(**input_data):
             for param in input_data['result_data']['misc']:
                 result[key].loc[fluid, param] = ORC.get_misc_param(param)
 
+    if input_data['save_result']:
+        if not os.path.isdir(input_data['scenario']):
+            os.mkdir('./' + input_data['scenario'])
+        for key in input_data['variables'].keys():
+            result[key].to_csv(input_data['scenario'] + '/' + key + '.csv')
+
     return result
 
 
@@ -578,7 +631,7 @@ def single_parameter_influence(**input_data):
         result[fluid] = pd.DataFrame()
 
         for key, value in input_data['variables'].items():
-            for x in np.linspace(value['min'], value['max'], value['num_gen']):
+            for x in np.linspace(value['min'], value['max'], value['num']):
                 ORC.run_simulation(**input_data['boundary_conditions'], **{key: x})
 
                 for conn, param_list in input_data['result_data']['connections'].items():
@@ -590,5 +643,11 @@ def single_parameter_influence(**input_data):
 
                 for param in input_data['result_data']['misc']:
                     result[fluid].loc[x, param] = ORC.get_misc_param(param)
+
+    if input_data['save_result']:
+        if not os.path.isdir(input_data['scenario']):
+            os.mkdir('./' + input_data['scenario'])
+        for fluid in fluid_list:
+            result[fluid].to_csv(input_data['scenario'] + '/' + fluid + '.csv')
 
     return result

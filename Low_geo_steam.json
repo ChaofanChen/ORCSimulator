@@ -1,4 +1,5 @@
 {
+	"scenario": "low geosteam influence",
 	"working_fluid_list": ["R245fa", "R600"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.05,
@@ -9,7 +10,7 @@
 		"T_before_tur": {
 			"max": 130,
 			"min": 50,
-			"num_gen": 20,
+			"num": 20,
 			"tol": 1e-3,
 			"unit": "°C",
 			"label": "Turbine inlet temperature"
@@ -26,7 +27,5 @@
 		},
 		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency"]
 	},
-	"objective": "gross power output",
-	"num_gen": 20,
-	"num_ind": 5
+	"save_result": true
 }

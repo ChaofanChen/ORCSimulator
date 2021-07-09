@@ -1,19 +1,19 @@
 {
-	"scenario": "IHE installation",
-	"working_fluid_list": ["R245fa", "R600"],
+	"scenario": "IHE_sizing_Isopentane",
+	"working_fluid_list": ["Isopentane"],
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
-		"dT_air": 15,
-		"T_reinjection": 70
+		"T_before_tur": 115.29,
+		"dT_air": 15
 	},
 	"variables": {
-		"T_before_tur": {
-			"max": 131,
-			"min": 125,
-			"num": 10,
+		"IHE_sizing": {
+			"max": 1,
+			"min": 0,
+			"num": 20,
 			"tol": 1e-3,
 			"unit": "°C",
-			"label": "Turbine inlet temperature"
+			"label": "IHE sizing factor"
 		}
 	},
 	"result_data": {
