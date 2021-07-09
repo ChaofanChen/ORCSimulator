@@ -15,7 +15,12 @@ Three different tasks can be accomplished with the software:
 - multivariate parameter optimization (`from geothermal_orc import multivariate_optimization`)
 
 Import the respective functionality and run it with the .json control file.
-The result date are passed to the function call.
+The result date are passed to the function call. Example applications can be
+found within the scripts folder:
+
+- single.py
+- parameter_influence.py
+- multivariate.py
 
 ## Topology and System Design
 
@@ -112,7 +117,7 @@ respective publication. A link will be added here once published.
 
 ## License
 
-Copyright 2021 Francesco Witte, Chaofan Chen
+Copyright (c) 2021 Francesco Witte, Chaofan Chen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
