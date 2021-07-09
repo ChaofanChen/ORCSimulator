@@ -1,0 +1,31 @@
+{
+	"scenario": "low geosteam influence",
+	"working_fluid_list": ["R245fa", "R600"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.05,
+		"IHE_sizing": 1,
+		"dT_air": 15
+	},
+	"variables": {
+		"T_before_tur": {
+			"max": 130,
+			"min": 50,
+			"num": 20,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T"],
+			"2": ["T", "p"],
+			"35": ["T"]
+		},
+		"components": {
+			"geobrine evaporator": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency"]
+	},
+	"save_result": true
+}

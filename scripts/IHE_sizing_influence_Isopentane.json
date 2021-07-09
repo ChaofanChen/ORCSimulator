@@ -1,0 +1,31 @@
+{
+	"scenario": "IHE_sizing_Isopentane",
+	"working_fluid_list": ["Isopentane"],
+	"boundary_conditions": {
+		"geo_steam_share": 0.1,
+		"T_before_tur": 115.29,
+		"dT_air": 15
+	},
+	"variables": {
+		"IHE_sizing": {
+			"max": 1,
+			"min": 0,
+			"num": 20,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "IHE sizing factor"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"1": ["T"],
+			"2": ["T", "p"],
+			"35": ["T"]
+		},
+		"components": {
+			"internal heat exchanger": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency", "IHE sizing factor"]
+	},
+	"save_result": true
+}
