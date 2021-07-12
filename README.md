@@ -118,6 +118,8 @@ An archived version of this repository can be found at zenodo:
 https://zenodo.org/record/SOMERECORD. For more information also see the
 respective publication. A link will be added here once published.
 
+If you have any questions or suggestions feel free to contact us anytime!
+
 ## License
 
 Copyright (c) 2021 Francesco Witte, Chaofan Chen
