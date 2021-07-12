@@ -22,9 +22,12 @@ found within the scripts folder:
 - parameter_influence.py
 - multivariate.py
 
+Sample input data can be found in the same folder.
+
 ## Topology and System Design
 
 ![Alt flow diagram of the geothermal ORC](./flowdiagram.svg)
+*Flow diagram of the geothermal ORC plant (a) and Ts-diagram of the process*
 
 The table below highlights the design parameters of the system.
 
