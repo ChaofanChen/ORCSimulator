@@ -1,4 +1,4 @@
-# ORCSimulator
+# Two-phase Geothermal Source ORC Plant Simulator
 
 ## Installation and Usage
 
