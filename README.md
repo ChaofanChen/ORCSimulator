@@ -1,4 +1,4 @@
-# Two-phase Geothermal Source ORC Power Plant Simulator
+# Two-phase Geothermal Source ORC Power Plant
 
 The provided scripts implement a workflow for the parametric optimization of
 a two-phase geothermal source ORC power plant by applying different search
