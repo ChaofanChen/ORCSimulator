@@ -1,4 +1,9 @@
-# Two-phase Geothermal Source ORC Plant Simulator
+# Two-phase Geothermal Source ORC Power Plant Simulator
+
+The provided scripts implement a workflow for the parametric optimization of
+a two-phase geothermal source ORC power plant by applying different search
+algorithms to a TESPy model of an ORC cycle. Besides parameter influence
+analysis, both single and multivariate, optimization procedures are available.
 
 ## Installation and Usage
 
