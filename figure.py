@@ -51,7 +51,7 @@ ax.tick_params(axis="y", labelsize=15)
 #ax2.tick_params(axis="y", labelsize=15)
 #ax2.plot(np.linspace(0, 8, 5), (70,70,70,70,70), dashes=[2, 2], linewidth=3, color='red')
 ax.grid()
-ax.legend(frameon=False, prop={'size': 12})
+ax.legend(frameon=False, prop={'size': 14})
 plt.savefig('IHE_influence_net_power_output.pdf')
 
 
@@ -71,7 +71,7 @@ plt.ylim(60, 85)
 ax.tick_params(axis="y", labelsize=15)
 ax.plot(np.linspace(0, 12, 5), (70,70,70,70,70), dashes=[2, 2], linewidth=3, color='red')
 ax.grid()
-ax.legend(frameon=False, prop={'size': 12})
+ax.legend(frameon=False, prop={'size': 14})
 plt.savefig('IHE_influence_reinjection_T.pdf')
 
 #%%
@@ -107,8 +107,8 @@ ax.tick_params(axis='y', colors='blue')
 ax2.yaxis.label.set_size(17)
 ax2.tick_params(axis="y", labelsize=15)
 ax.grid()
-ax.legend(loc="lower left", frameon=False, prop={'size': 12})
-ax2.legend(loc="best", frameon=False, prop={'size': 12})
+ax.legend(loc="lower left", frameon=False, prop={'size': 15})
+ax2.legend(loc="best", frameon=False, prop={'size': 15})
 plt.savefig('IHE_install_R245fa_R600.pdf')
 
 
