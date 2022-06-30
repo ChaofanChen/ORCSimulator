@@ -3,7 +3,8 @@
 	"boundary_conditions": {
 		"geo_steam_share": 0.1,
 		"IHE_sizing": 0,
-		"dT_air": 15
+		"dT_air": 15,
+		"geo_mass_flow": 200
 	},
 	"variables": {
 		"T_before_tur": {

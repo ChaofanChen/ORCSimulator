@@ -226,7 +226,8 @@ class PowerPlant():
     def run_simulation(
             self, p_before_tur=None, Q_ihe=None, Q_brine_ev=None,
             T_before_tur=None, T_reinjection=None, brine_evap_Td=None,
-            dT_air=None, IHE_sizing=None, geo_steam_share=None):
+            dT_air=None, IHE_sizing=None, geo_steam_share=None, geo_mass_flow=None,
+            T_brine_in=None):
         """Run simulation on specified parameter set."""
 
         self.nw.get_comp('internal heat exchanger').set_attr(Q=Q_ihe)
@@ -234,11 +235,15 @@ class PowerPlant():
         self.nw.get_conn('35').set_attr(T=T_reinjection)
         self.nw.get_comp('geobrine evaporator').set_attr(Q=Q_brine_ev)
 
+        if T_brine_in is not None:
+            self.nw.get_conn('30').set_attr(T=T_brine_in)
+            self.nw.get_conn('32').set_attr(T=T_brine_in)
+        
         if geo_steam_share is not None:
             self.nw.get_conn('30').set_attr(
-                m=self.geo_mass_flow * geo_steam_share)
+                m=geo_mass_flow * geo_steam_share)
             self.nw.get_conn('32').set_attr(
-                m=self.geo_mass_flow * (1 - geo_steam_share))
+                m=geo_mass_flow * (1 - geo_steam_share))
 
         if brine_evap_Td is not None:
             self.nw.get_conn('34').set_attr(
@@ -266,7 +271,7 @@ class PowerPlant():
 
         try:
             self.nw.solve('design')
-#            self.nw.print_results()
+            self.nw.print_results()
         except ValueError:
             self.nw.res = [1]
             pass

@@ -1,7 +1,8 @@
 {
-	"working_fluid_list": ["R245ca", "Isopentane", "n-Pentane", "R123", "R113", "R141B", "R11", "R245fa", "R600"],
+	"working_fluid_list": ["R245ca", "Isopentane", "n-Pentane", "R141B", "R245fa", "R600"],
 	"boundary_conditions": {
-		"geo_steam_share": 0.1
+		"geo_steam_share": 0.1,
+		"geo_mass_flow": 200
 	},
 	"variables": {
 		"T_before_tur": {

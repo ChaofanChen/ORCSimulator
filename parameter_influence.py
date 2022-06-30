@@ -34,8 +34,8 @@ for a in range(len(fluid)):
     ax2=ax.twinx()
     ax2.plot(df['T_1'], df['T_35'], color='black', marker="*", label='Re-injection temperature')
     ax2.set(ylabel='Re-injection temperature (°C)')
-    plt.ylim(40, 100)
-    plt.xlim(50, 130)
+#    plt.ylim(40, 100)
+#    plt.xlim(50, 130)
     ax.yaxis.label.set_color('blue')
     ax.yaxis.label.set_size(18)
     ax.xaxis.label.set_size(18)
@@ -45,7 +45,7 @@ for a in range(len(fluid)):
     ax2.yaxis.label.set_size(18)
     ax2.tick_params(axis="y", labelsize=15)
     ax.grid()
-    plt.savefig('T_tur_with_' + fluid[a] + '.pdf')
+#    plt.savefig('T_tur_with_' + fluid[a] + '.pdf')
 
 #%%   IHE sizing factor
 
@@ -249,27 +249,32 @@ n = ['1', '2', '3', ' ', '5', '6', '7']
 
 ax.scatter(entropy, Temp, color='red', s=0.5)
 for i, txt in enumerate(n):
-    ax.annotate(txt, (entropy[i], Temp[i]), fontsize=12, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
+    ax.annotate(txt, (entropy[i], Temp[i]), fontsize=16, textcoords="offset points", xytext=(0,6), horizontalalignment='right')  # , ha='center'
 for i in range(0, 2, 1):
     plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
 for i in range(4, 6, 1):
     plt.plot(entropy[i:i + 2], Temp[i:i + 2], 'ro-', lw=2)
 
-## geo-source
-#ax.scatter(df['s_30'] * 0.1 + df['s_32'] * 0.9, df['T_30'])
-#ax.scatter(df['s_35'], df['T_35'])
-## cooling air
-#ax.scatter(df['s_20'], df['T_20'])
-#ax.scatter(df['s_22'], df['T_22'])
+# geo-source
+ax.scatter(df['s_30'] * 0.1 + df['s_32'] * 0.9 - 250, df['T_30']+10)
+ax.scatter(df['s_35'], df['T_35'] + 20)
+# cooling air
+ax.scatter(df['s_20']-3000, df['T_20'])
+ax.scatter(df['s_22']-2100, df['T_22'])
 
 plt.ylim(0, 180)
-ax.set(xlabel='Specific entropy (J/kg K)', ylabel='Temperature (°C)')
+ax.set(xlabel='Specific entropy', ylabel='Temperature')
+#ax.set(xlabel='Specific entropy (J/kg K)', ylabel='Temperature (°C)')
 ax.yaxis.label.set_size(18)
 ax.xaxis.label.set_size(18)
-ax.tick_params(axis="x", labelsize=15)
-ax.tick_params(axis="y", labelsize=15)
-ax.grid()
-plt.savefig('ORC_Ts_plot_' + fluid + '.pdf')
+#ax.tick_params(axis="x", labelsize=15)
+#ax.tick_params(axis="y", labelsize=15)
+#ax.grid()
+# Turn off tick labels
+ax.set_yticklabels([])
+ax.set_xticklabels([])
+#plt.savefig('ORC_Ts_plot_' + fluid + '.pdf')
+plt.savefig('ORC_Ts_plot.pdf')
 plt.show()
 
 #%%
