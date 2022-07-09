@@ -42,9 +42,9 @@ The table below highlights the design parameters of the system.
 | Item                | Parameter            | Symbol                  | Value | Unit  |
 |:--------------------|:---------------------|:------------------------|:------|:------|
 | Geothermal resource | Steam temperature    | *T*<sub>gs</sub>    | 140   |  °C   |
-|                     | Steam mass flow rate | *ṁ*<sub>gs</sub>    | 180   |  kg/s |
+|                     | Steam mass flow rate | *ṁ*<sub>gs</sub>    | 20   |  kg/s |
 |                     | Brine temperature    | *T*<sub>gb</sub>    | 140   |  °C   |
-|                     | Brine mass flow rate | *ṁ*<sub>gb</sub>    | 20    |  kg/s |
+|                     | Brine mass flow rate | *ṁ*<sub>gb</sub>    | 180    |  kg/s |
 |                     | Steam mass fraction  | *x*                     | 0.1   | \-    |
 |                     | Brine/steam pressure | *p*<sub>geo</sub> | 3.615 | bar   |
 | Ambient condition   | Average temperature  | *T*<sub>am</sub>    | 5     |  °C   |
