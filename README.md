@@ -121,7 +121,9 @@ Choose from:
 
 An archived version of this repository can be found at zenodo:
 https://zenodo.org/record/5094931. For more information also see the
-respective publication. A link will be added here once published.
+respective publication: https://doi.org/10.1016/j.energy.2022.123910.
+
+Chaofan Chen, Francesco Witte, Ilja Tuschy, Olaf Kolditz, and Haibing Shao. "Parametric optimization and comparative study of an organic Rankine cycle power plant for two-phase geothermal sources." Energy 252 (2022): 123910.
 
 If you have any questions or suggestions feel free to contact us anytime!
 
