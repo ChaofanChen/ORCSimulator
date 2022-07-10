@@ -1,0 +1,44 @@
+{
+	"working_fluid_list": ["Isobutane"],
+	"boundary_conditions": {
+    	"T_brine_in": 120,
+		"geo_steam_share": 0.05,		
+		"geo_mass_flow": 167,
+		"IHE_sizing": 0,
+		"dT_air": 13
+	},
+	"variables": {
+		"T_before_tur": {
+			"max": 85,
+			"min": 85,
+			"num_gen": 1,
+			"tol": 1e-3,
+			"unit": "°C",
+			"label": "Turbine inlet temperature"
+		}
+	},
+	"result_data": {
+		"connections": {
+			"0": ["T", "s"],
+			"1": ["T", "s"],
+			"2": ["T", "s"],
+			"3": ["T", "s"],
+			"4": ["T", "s"],
+			"5": ["T", "s"],
+			"6": ["T", "s"],
+			"7": ["T", "s"],
+			"35": ["T", "s"],
+			"30": ["T", "s"],
+			"32": ["T", "s"],
+			"20": ["T", "s"],
+			"22": ["T", "s"]
+		},
+		"components": {
+			"geobrine evaporator": ["Q"]
+		},
+		"misc": ["gross power output", "net power output", "thermal efficiency", "net efficiency"]
+	},
+	"objective": "gross power output",
+	"num_gen": 20,
+	"num_ind": 5
+}

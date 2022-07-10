@@ -46,14 +46,14 @@ class PowerPlant():
 
         # geo parameters
 
-        self.geo_mass_flow = 200
-        geo_steam_share = 0.1
+        self.geo_mass_flow = 167
+        geo_steam_share = 0.05
         self.T_brine_in = 140
 
         # ambient parameters
 
-        self.T_amb = 5
-        self.p_amb = 0.6
+        self.T_amb = 15
+        self.p_amb = 1
 
         # main components
 
@@ -72,6 +72,7 @@ class PowerPlant():
         evap_merge = Merge('merge evaporation')
         evap_steam = Condenser('geosteam evaporator')
         evap_brine = HeatExchanger('geobrine evaporator')
+        su = HeatExchanger('superheater')
         dr = Drum('drum')
         geo_merge = Merge('merge brine')
 
@@ -123,8 +124,12 @@ class PowerPlant():
         esp_eb = Connection(evap_splitter, 'out1', evap_brine, 'in2', label='11')
         eb_em = Connection(evap_brine, 'out2', evap_merge, 'in1', label='12')
         em_dr = Connection(evap_merge, 'out1', dr, 'in2', label='13')
-        ls_out = Connection(dr, 'out2', orc_cc, 'in1', label='1_closing')
-        self.nw.add_conns(ihe_pre, pre_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, ls_out)
+
+        dr_su = Connection(dr, 'out2', su, 'in2', label='0')
+        ls_out = Connection(su, 'out2', orc_cc, 'in1', label='1_closing')
+
+#        ls_out = Connection(dr, 'out2', orc_cc, 'in1', label='1_closing')
+        self.nw.add_conns(ihe_pre, pre_dr, dr_esp, esp_eb, esp_es, eb_em, es_em, em_dr, dr_su, ls_out)
 
         # condenser cold side
         air_in_fan = Connection(air_in, 'out1', air_fan, 'in1', label='20')
@@ -136,8 +141,12 @@ class PowerPlant():
         gs_es = Connection(geo_steam, 'out1', evap_steam, 'in1', label='30')
         es_gm = Connection(evap_steam, 'out1',  geo_merge, 'in1', label='31')
         gb_gm = Connection(geo_brine, 'out1', geo_merge, 'in2', label='32')
-        gm_eb = Connection(geo_merge, 'out1', evap_brine, 'in1', label='33')
-        self.nw.add_conns(gs_es, es_gm, gb_gm, gm_eb)
+
+        gm_su = Connection(geo_merge, 'out1', su, 'in1', label='43')
+        su_eb = Connection(su, 'out1', evap_brine, 'in1', label='33')
+
+#        gm_eb = Connection(geo_merge, 'out1', evap_brine, 'in1', label='33')
+        self.nw.add_conns(gs_es, es_gm, gb_gm, gm_su, su_eb)
 
         eb_pre = Connection(evap_brine, 'out1', pre, 'in1', label='34')
         pre_gr = Connection(pre, 'out1', geo_reinjection, 'in1', label='35')
@@ -151,18 +160,18 @@ class PowerPlant():
         gb_gm.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
 
         # connection parameters
-        p0 = PSI('P', 'T', self.T_brine_in + 273.15, 'Q', 1, self.working_fluid)
+        p0 = PSI('P', 'T', 120 + 273.15, 'Q', 1, self.working_fluid)
         ls_in.set_attr(p0=p0 / 1e5)
         ws_stable_h0 = (
             PSI('H', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid) +
             0.5 * (
-                PSI('H', 'T', self.T_brine_in + 273.15, 'Q', 1, self.working_fluid) -
+                PSI('H', 'T', 120 + 273.15, 'Q', 1, self.working_fluid) -
                 PSI('H', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid)
             )
         ) / 1e3
         tur_ihe.set_attr(h=ws_stable_h0)
         p0 = PSI('P', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid)
-        ihe_cond.set_attr(Td_bp=5, design=['Td_bp'], p0=p0 / 1e5)
+        ihe_cond.set_attr(Td_bp=2, design=['Td_bp'], p0=p0 / 1e5)
         fwp_ihe.set_attr(h=Ref(cond_fwp, 1, 1))
 
         # steam generator
@@ -173,12 +182,14 @@ class PowerPlant():
             m=self.geo_mass_flow * (1 - geo_steam_share),
             T=self.T_brine_in, x=0)
 
+        ls_out.set_attr(state='g')
         em_dr.set_attr()
         eb_em.set_attr(x=0.5)
         es_em.set_attr(x=0.5, design=['x'])
-        eb_pre.set_attr(h=Ref(gm_eb, 1, -50))
+        eb_pre.set_attr(h=Ref(su_eb, 1, -50))
 
         pre_dr.set_attr(Td_bp=-2)
+        ls_out.set_attr(Td_bp=1)
 
         # main condenser
         air_in_fan.set_attr(p=self.p_amb, T=self.T_amb)
@@ -187,23 +198,29 @@ class PowerPlant():
         # component parameters
         # condensing
         ihe.set_attr(pr1=0.98, pr2=0.98)
-        air_cond.set_attr(pr1=1, pr2=0.995, ttd_u=10)
-        air_fan.set_attr(eta_s=0.6)
+        air_cond.set_attr(pr1=1, pr2=0.995, ttd_u=8)
+        air_fan.set_attr(eta_s=0.9)
 
         # steam generator
         evap_brine.set_attr(pr1=0.98, ttd_l=8)
         pre.set_attr(pr1=0.98, pr2=0.98)
 
+        su.set_attr(pr1=1, pr2=1)
+
         self.nw.set_attr(iterinfo=False)
         self.nw.solve('design')
+
+#        self.nw.print_results()
+
         self.nw.save('stable_' + self.working_fluid)
         tur.set_attr(eta_s=0.9)
         feed_working_fluid_pump.set_attr(eta_s=0.75)
         tur_ihe.set_attr(h=None)
         fwp_ihe.set_attr(h=None)
-        eb_pre.set_attr(h=None, T=Ref(gm_eb, 1, -10))
+        eb_pre.set_attr(h=None, T=Ref(su_eb, 1, -15))
 
         self.nw.solve('design')
+#        self.nw.print_results()
         cond_air_hot.set_attr(T=None)
         ihe_cond.set_attr(Td_bp=None)
 
@@ -231,7 +248,7 @@ class PowerPlant():
         """Run simulation on specified parameter set."""
 
         self.nw.get_comp('internal heat exchanger').set_attr(Q=Q_ihe)
-        self.nw.get_conn('1').set_attr(p=p_before_tur, T=T_before_tur)
+        self.nw.get_conn('0').set_attr(p=p_before_tur, T=T_before_tur)
         self.nw.get_conn('35').set_attr(T=T_reinjection)
         self.nw.get_comp('geobrine evaporator').set_attr(Q=Q_brine_ev)
 
@@ -270,6 +287,7 @@ class PowerPlant():
                 self.nw.get_comp('internal heat exchanger').set_attr(pr1=0.98, pr2=0.98)
 
         try:
+#            self.nw.set_attr(iterinfo=True)
             self.nw.solve('design')
             self.nw.print_results()
         except ValueError:
