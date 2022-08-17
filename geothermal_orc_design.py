@@ -93,7 +93,7 @@ class PowerPlant():
 
         ORC_power_bus = Bus('cycle gross power output')
         ORC_power_bus.add_comps(
-            {'comp': tur}, {'comp': feed_working_fluid_pump}
+            {'comp': tur}
         )
 
         geothermal_bus = Bus('thermal input')

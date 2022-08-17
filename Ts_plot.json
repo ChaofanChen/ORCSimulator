@@ -2,8 +2,8 @@
 	"working_fluid_list": ["Isobutane"],
 	"boundary_conditions": {
     	"T_brine_in": 120,
-		"geo_steam_share": 0.05,		
-		"geo_mass_flow": 167,
+		"geo_steam_share": 0.0012,		
+		"geo_mass_flow": 166.6,
 		"IHE_sizing": 0,
 		"dT_air": 13
 	},
