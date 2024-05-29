@@ -20,21 +20,30 @@ import os
 
 def desuperheat(ude):
     ttd_min = ude.params['ttd_min']
+    c1, c2, c3 = ude.conns
     return (
-        ude.conns[0].h.val_SI - ude.conns[1].h.val_SI -
+        c1.h.val_SI - c2.h.val_SI -
         ude.params['distance'] * (
-            ude.conns[0].h.val_SI - h_mix_pT(
-                ude.conns[1].get_flow(),
-                T_mix_ph(ude.conns[2].get_flow()) + ttd_min)))
+            c2.h.val_SI - h_mix_pT(
+                c2.p.val_SI,
+                c3.calc_T(),
+                c2.fluid_data
+            ) + ttd_min)
+        )
 
 
 def desuperheat_deriv(ude):
-    ude.jacobian[ude.conns[0]][2] = 1 - ude.params['distance']
-    ude.jacobian[ude.conns[1]][1] = ude.numeric_deriv('p', 1)
-    ude.jacobian[ude.conns[1]][2] = -1
-    ude.jacobian[ude.conns[2]][1] = ude.numeric_deriv('p', 2)
-    ude.jacobian[ude.conns[2]][2] = ude.numeric_deriv('h', 2)
-    return ude.jacobian
+    c1, c2, c3 = ude.conns
+    if c1.h.is_var:
+        ude.jacobian[c1.h.J_col] = 1 - ude.params['distance']
+    if c2.p.is_var:
+        ude.jacobian[c2.p.J_col] = ude.numeric_deriv('p', c2)
+    if c2.h.is_var:
+        ude.jacobian[c2.h.J_col] = - 1 - ude.params["distance"]
+    if c3.p.is_var:
+        ude.jacobian[c3.p.J_col] = ude.numeric_deriv('p', c3)
+    if c3.h.is_var:
+        ude.jacobian[c3.h.J_col] = ude.numeric_deriv('h', c3)
 
 
 class PowerPlant():
@@ -42,8 +51,7 @@ class PowerPlant():
     def __init__(self, working_fluid):
         """Set up model."""
         self.working_fluid = working_fluid
-        fluids = ['water', self.working_fluid, 'air']
-        self.nw = Network(fluids=fluids)
+        self.nw = Network()
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
@@ -147,10 +155,10 @@ class PowerPlant():
 
         # generate a set of stable starting values of every working fluid
         # fluid settings
-        c6.set_attr(fluid={self.working_fluid: 1.0, 'air': 0.0, 'water': 0.0})
-        c20.set_attr(fluid={self.working_fluid: 0.0, 'air': 1.0, 'water': 0.0})
-        c30.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
-        c32.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
+        c6.set_attr(fluid={self.working_fluid: 1.0})
+        c20.set_attr(fluid={'air': 1.0})
+        c30.set_attr(fluid={'water': 1.0})
+        c32.set_attr(fluid={'water': 1.0})
 
         # connection parameters
         p0 = PSI('P', 'T', self.T_brine_in + 273.15, 'Q', 1, self.working_fluid)
@@ -276,13 +284,15 @@ class PowerPlant():
         try:
             self.nw.solve('design')
 #            self.nw.print_results()
-        except ValueError:
-            self.nw.res = [1]
+        except ValueError as e:
+            self.nw.residual_history = [1]
+            self.nw._reset_topology_reduction_specifications()
+            print(e)
             pass
 
     def check_simulation(self, value):
         """Check if simulation converged."""
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+        if self.nw.lin_dep or self.nw.residual_history[-1] > 1e-3:
             self.nw.solve(
                 'design', init_path='stable_' + self.working_fluid,
                 init_only=True)
@@ -290,11 +300,11 @@ class PowerPlant():
         else:
             for cp in self.nw.comps['object']:
                 if isinstance(cp, HeatExchanger):
-                    if cp.Q.val > 0:
-                        print(cp.label)
+                    if cp.Q.val > 1e-6:
+                        print(cp.label, f"Q={cp.Q.val}")
                         return np.nan
-                    elif cp.kA.val <= 0 or (np.isnan(cp.kA.val) and cp.Q.val != 0):
-                        print(cp.label)
+                    elif cp.kA.val <= -1e-6 or (np.isnan(cp.kA.val) and cp.Q.val != 0):
+                        print(cp.label, f"UA={cp.kA.val}")
                         return np.nan
         return value
 
