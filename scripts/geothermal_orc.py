@@ -20,21 +20,30 @@ import os
 
 def desuperheat(ude):
     ttd_min = ude.params['ttd_min']
+    c1, c2, c3 = ude.conns
     return (
-        ude.conns[0].h.val_SI - ude.conns[1].h.val_SI -
+        c1.h.val_SI - c2.h.val_SI -
         ude.params['distance'] * (
-            ude.conns[0].h.val_SI - h_mix_pT(
-                ude.conns[1].get_flow(),
-                T_mix_ph(ude.conns[2].get_flow()) + ttd_min)))
+            c2.h.val_SI - h_mix_pT(
+                c2.p.val_SI,
+                c3.calc_T(),
+                c2.fluid_data
+            ) + ttd_min)
+        )
 
 
 def desuperheat_deriv(ude):
-    ude.jacobian[ude.conns[0]][2] = 1 - ude.params['distance']
-    ude.jacobian[ude.conns[1]][1] = ude.numeric_deriv('p', 1)
-    ude.jacobian[ude.conns[1]][2] = -1
-    ude.jacobian[ude.conns[2]][1] = ude.numeric_deriv('p', 2)
-    ude.jacobian[ude.conns[2]][2] = ude.numeric_deriv('h', 2)
-    return ude.jacobian
+    c1, c2, c3 = ude.conns
+    if c1.h.is_var:
+        ude.jacobian[c1.h.J_col] = 1 - ude.params['distance']
+    if c2.p.is_var:
+        ude.jacobian[c2.p.J_col] = ude.numeric_deriv('p', c2)
+    if c2.h.is_var:
+        ude.jacobian[c2.h.J_col] = - 1 - ude.params["distance"]
+    if c3.p.is_var:
+        ude.jacobian[c3.p.J_col] = ude.numeric_deriv('p', c3)
+    if c3.h.is_var:
+        ude.jacobian[c3.h.J_col] = ude.numeric_deriv('h', c3)
 
 
 class PowerPlant():
@@ -42,8 +51,7 @@ class PowerPlant():
     def __init__(self, working_fluid):
         """Set up model."""
         self.working_fluid = working_fluid
-        fluids = ['water', self.working_fluid, 'air']
-        self.nw = Network(fluids=fluids)
+        self.nw = Network()
         self.nw.set_attr(p_unit='bar', T_unit='C', h_unit='kJ / kg')
 
         # geo parameters
@@ -147,14 +155,14 @@ class PowerPlant():
 
         # generate a set of stable starting values of every working fluid
         # fluid settings
-        c6.set_attr(fluid={self.working_fluid: 1.0, 'air': 0.0, 'water': 0.0})
-        c20.set_attr(fluid={self.working_fluid: 0.0, 'air': 1.0, 'water': 0.0})
-        c30.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
-        c32.set_attr(fluid={self.working_fluid: 0.0, 'air': 0.0, 'water': 1.0})
+        c6.set_attr(fluid={self.working_fluid: 1.0})
+        c20.set_attr(fluid={'air': 1.0})
+        c30.set_attr(fluid={'water': 1.0})
+        c32.set_attr(fluid={'water': 1.0})
 
         # connection parameters
-        p0 = PSI('P', 'T', self.T_brine_in + 273.15, 'Q', 1, self.working_fluid)
-        c1.set_attr(p0=p0 / 1e5)
+        p0 = PSI('P', 'T', self.T_brine_in + 273.15 - 10, 'Q', 1, self.working_fluid)
+        c1.set_attr(p=p0 / 1e5)
         ws_stable_h0 = (
             PSI('H', 'T', self.T_amb + 273.15, 'Q', 1, self.working_fluid) +
             0.5 * (
@@ -169,13 +177,12 @@ class PowerPlant():
 
         # steam generator
         c30.set_attr(
-            m=self.geo_mass_flow * geo_steam_share,
-            T=self.T_brine_in, x=1, p0=5)
+            m=self.geo_mass_flow * geo_steam_share, T=self.T_brine_in, x=1
+        )
         c32.set_attr(
-            m=self.geo_mass_flow * (1 - geo_steam_share),
-            T=self.T_brine_in, x=0)
+            m=self.geo_mass_flow * (1 - geo_steam_share), T=self.T_brine_in, x=0
+        )
 
-        c13.set_attr()
         c12.set_attr(x=0.5)
         c10.set_attr(x=0.5, design=['x'])
         c34.set_attr(h=Ref(c33, 1, -50))
@@ -193,7 +200,7 @@ class PowerPlant():
         air_fan.set_attr(eta_s=0.6)
 
         # steam generator
-        evap_brine.set_attr(pr1=0.98, ttd_l=8)
+        evap_brine.set_attr(pr1=0.98)#, ttd_l=8)
         pre.set_attr(pr1=0.98, pr2=0.98)
 
         self.nw.set_attr(iterinfo=False)
@@ -203,6 +210,8 @@ class PowerPlant():
         # specify actual parameters
         tur.set_attr(eta_s=0.9)
         feed_working_fluid_pump.set_attr(eta_s=0.75)
+        c1.set_attr(p=None)
+        evap_brine.set_attr(ttd_l=8)
         c2.set_attr(h=None)
         c5.set_attr(h=None)
         c34.set_attr(h=None, T=Ref(c33, 1, -10))
@@ -225,12 +234,14 @@ class PowerPlant():
                 self.nw.get_conn('5')],
             params={'distance': 0.0, 'ttd_min': 2}
         )
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+        if self.nw.lin_dep or self.nw.residual_history[-1] > 1e-3:
             msg = 'No stable solution found.'
             raise TESPyNetworkError(msg)
         print(
             'Generated stable starting values for working fluid ' +
             self.working_fluid + '.')
+
+        self.nw.print_results()
 
     def run_simulation(
             self, p_before_tur=None, Q_ihe=None, Q_brine_ev=None,
@@ -276,13 +287,15 @@ class PowerPlant():
         try:
             self.nw.solve('design')
 #            self.nw.print_results()
-        except ValueError:
-            self.nw.res = [1]
+        except ValueError as e:
+            self.nw.residual_history = [1]
+            self.nw._reset_topology_reduction_specifications()
+            print(e)
             pass
 
     def check_simulation(self, value):
         """Check if simulation converged."""
-        if self.nw.lin_dep or self.nw.res[-1] > 1e-3:
+        if self.nw.lin_dep or self.nw.residual_history[-1] > 1e-3:
             self.nw.solve(
                 'design', init_path='stable_' + self.working_fluid,
                 init_only=True)
@@ -290,11 +303,11 @@ class PowerPlant():
         else:
             for cp in self.nw.comps['object']:
                 if isinstance(cp, HeatExchanger):
-                    if cp.Q.val > 0:
-                        print(cp.label)
+                    if cp.Q.val > 1e-6:
+                        print(cp.label, f"Q={cp.Q.val}")
                         return np.nan
-                    elif cp.kA.val <= 0 or (np.isnan(cp.kA.val) and cp.Q.val != 0):
-                        print(cp.label)
+                    elif cp.kA.val <= -1e-6 or (np.isnan(cp.kA.val) and cp.Q.val != 0):
+                        print(cp.label, f"UA={cp.kA.val}")
                         return np.nan
         return value
 
@@ -625,8 +638,8 @@ def single_parameter_influence(**input_data):
     result = {}
 
     for fluid in fluid_list:
-        ORC = PowerPlant(working_fluid=fluid)
         print('Working fluid:', fluid)
+        ORC = PowerPlant(working_fluid=fluid)
 
         result[fluid] = pd.DataFrame()
 
