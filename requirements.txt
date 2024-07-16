@@ -1,6 +1,2 @@
-tespy==0.4.3.post5
-matplotlib==3.3.3
-CoolProp==6.4.0
-pandas==1.2.4
-numpy==1.19.0
-pygmo==2.16.1
+tespy
+pygmo
